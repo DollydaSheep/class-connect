@@ -1,0 +1,139 @@
+"use client"
+
+import { Animated, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import { useColorScheme } from 'nativewind';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
+import { Ellipsis, Plus } from "lucide-react-native";
+import { getClasses, subscribeToClasses, Class, addClass } from '@/lib/services/classService';
+import { useEffect, useRef, useState } from "react";
+import { Modal } from "./modal";
+import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
+
+
+export default function ClassesComponent() {
+  const { colorScheme } = useColorScheme();
+
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [classCode, setClassCode] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = subscribeToClasses(
+      (updatedClasses) => {
+        console.log('Classes updated:', updatedClasses);
+        setClasses(updatedClasses);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Subscription error:', error);
+        setLoading(false);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  const handleFetchClasses = async () => {
+    setLoading(true);
+    try {
+      console.log('Fetching classes...');
+      const fetchedClasses = await getClasses();
+      console.log('Fetched:', fetchedClasses);
+      setClasses(fetchedClasses);
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    try{
+      const newClass = await addClass({
+        name: "New Class",
+        instructor: "New Guy",
+        classCode: classCode,
+      });
+      console.log("Class added: ", newClass);
+      setVisible(false);
+    }catch (err){
+      console.error("Failed to add class: ",err);
+    }
+  }
+
+  return(
+    <>
+      <View className='flex flex-row justify-between items-center w-full' >
+        <Text className="font-semibold my-2">Your classes</Text>
+        <Pressable 
+          className='rounded-full bg-foreground p-2 active:opacity-70 active:scale-95' 
+          onPress={()=> setVisible(true)}
+        >
+          <Icon as={Plus} className='size-6 text-background' />  
+        </Pressable>
+      </View>
+
+      {loading ? (
+        <Text>No Class</Text>
+      ) : classes.map((classItem, index) => (
+        <View key={index} className='bg-background p-4 rounded-lg'>
+          <View className='flex flex-row justify-between'>
+            <View className='flex flex-row items-start gap-4'>
+              <View className='px-4 py-3 bg-violet-500 rounded-lg'>
+                <Text className='text-white'>M</Text>
+              </View>
+              <View>
+                <Text className='font-medium'>{classItem.name}</Text>
+                <Text className='text-xs font-light'>Prof. {classItem.instructor}</Text>
+                <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: {classItem.classCode}</Text>
+              </View>
+            </View> 
+              <DropdownMenu
+                trigger={
+                  <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+              }
+              >
+                <DropdownMenuItem 
+                  label="Delete"
+                />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  label="Edit"
+                />
+              </DropdownMenu>
+              
+          </View>
+        </View>
+      ))} 
+
+      {/* Modal */}
+      <Modal
+        isOpen={visible}
+        onClose={() => setVisible(false)}
+        title="Join Class"
+      >
+        <ScrollView>
+          <View className="flex flex-col items-start">
+            <Text className="mb-2">Class Code</Text>
+            <TextInput 
+              className="w-full bg-foreground/10 p-4 rounded-lg text-foreground mb-2"
+              placeholder="e.g., MATH303"
+              placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+              value={classCode}
+              onChangeText={setClassCode}
+            />
+            <Pressable 
+              className="py-2 px-3 rounded-lg bg-foreground/10 active:opacity-75 self-end"
+              onPress={handleJoin}
+            >
+              <Text>Join</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </Modal>
+      
+    </>
+  )
+
+}
