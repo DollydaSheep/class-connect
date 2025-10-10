@@ -9,6 +9,7 @@ import {
   Modal,
   Animated,
   Easing,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { Icon } from "lucide-react-native";
 import { cn } from "@/lib/utils"; // for merging classNames
@@ -53,31 +54,39 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
       {/* Menu Overlay */}
       
         {visible && (
-          <Pressable
-            className={`flex-1 bg-black/1 00 absolute top-7 -right-2 z-50 `}
-            onPress={() => {setVisible(false);console.log("press")}}
-          >
-            <Animated.View
-              style={{
-                opacity: fadeAnim,
-                transform: [
-                  {
-                    scale: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.95, 1],
-                    }),
-                  },
-                ],
-              }}
-              className="bg-popover border border-border rounded-xl p-2 shadow-lg w-44"
+          <View className="w-[1500%] h-[1500%] absolute -top-[300px] right-0 z-50 bg-transparent">
+            <Pressable 
+              onPress={()=>setVisible(false)} 
+              className="absolute inset-0 bg-transparent"  
+              style={{ width: "200%" , height: "200%"}}
+            />
+            <Pressable
+              className={`flex-1 bg-black/0 absolute top-[330px] -right-2 z-50 `}
+              onPress={() => {setVisible(false);console.log("press")}}
             >
-              {React.Children.map(children, (child) =>
-                React.cloneElement(child as any, {
-                  closeMenu: () => setVisible(false),
-                })
-              )}
-            </Animated.View>
-          </Pressable>
+              <Animated.View
+                style={{
+                  opacity: fadeAnim,
+                  transform: [
+                    {
+                      scale: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.95, 1],
+                      }),
+                    },
+                  ],
+                }}
+                className="bg-popover border border-border rounded-xl p-2 shadow-lg w-44"
+              >
+                {React.Children.map(children, (child) =>
+                  React.cloneElement(child as any, {
+                    closeMenu: () => setVisible(false),
+                  })
+                )}
+              </Animated.View>
+            </Pressable>
+          </View>
+          
         )}
       
     </View>
