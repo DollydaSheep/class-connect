@@ -5,7 +5,7 @@ import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { Ellipsis, Plus } from "lucide-react-native";
-import { getClasses, subscribeToClasses, Class, addClass } from '@/lib/services/classService';
+import { getClasses, subscribeToClasses, Class, addClass, deleteClass } from '@/lib/services/classService';
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "./modal";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
@@ -62,6 +62,15 @@ export default function ClassesComponent() {
     }
   }
 
+  const handleDeleteClass = async (classId: string) => {
+    try{
+      await deleteClass(classId);
+      console.log("Class deleted: ",classId)
+    } catch (err){
+      console.error("Failed to delete class: ", err);
+    }
+  }
+
   return(
     <>
       <View className='flex flex-row justify-between items-center w-full' >
@@ -96,6 +105,7 @@ export default function ClassesComponent() {
               >
                 <DropdownMenuItem 
                   label="Delete"
+                  onPress={() => handleDeleteClass(classItem.id!)}
                 />
                 <DropdownMenuSeparator />
                 <DropdownMenuItem 
