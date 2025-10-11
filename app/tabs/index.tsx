@@ -1,6 +1,7 @@
 import UpcomingActivitiesHome from '@/components/activitiesHome';
 import AnnouncementsHomeComponent from '@/components/announcementsHome';
 import ClassesComponent from '@/components/classes';
+import LoginScreen from '@/components/loginScreen';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -28,14 +29,7 @@ export default function Screen() {
   return (
     <>
       <ScrollView className='flex-1 bg-foreground/5'>
-        <View className='flex-1 w-full gap-2 p-4'>
-          <ClassesComponent />
-
-          <AnnouncementsHomeComponent />
-
-          <UpcomingActivitiesHome />
-
-        </View>
+        <LoginScreen />
       </ScrollView>
       
     </>

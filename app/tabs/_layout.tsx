@@ -1,7 +1,9 @@
+import LoginScreen from '@/components/loginScreen';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import '@/global.css';
+import { useUserRole } from '@/hooks/useUserRole';
 
 import { NAV_THEME, THEME } from '@/lib/theme';
 import { ThemeProvider } from '@react-navigation/native';
@@ -37,79 +39,90 @@ const SCREEN_OPTIONS = {
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
+  const { role } = useUserRole();
+
+  if(role === null){
+    return(
+      <>
+        <View className='flex-1 bg-background'>
+          <LoginScreen />
+        </View>
+      </>
+    )
+  }
 
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Tabs screenOptions={{ tabBarActiveTintColor: colorScheme === 'dark' ? 'white' : 'black' }}>
-        <Tabs.Screen 
-          name='index'
-          options={{
-            ...SCREEN_OPTIONS[colorScheme ?? "light"],
-            tabBarLabel: "Home",
-            tabBarIcon: ({color, size}) =>(
-              <House 
-                className='size-6'
-                color={color}
-              />
-            )
-          }}
-        />
-        <Tabs.Screen 
-          name='activities'
-          options={{
-            headerTitle: () => (
-              <View>
-                <Text className='text-lg font-semibold'>Activities</Text>
-                <Text className='text-sm dark:text-gray-400 text-gray-600'>Assignments, quizzes & tasks</Text>
-              </View>
-            ),
-            tabBarLabel: "Activities",
-            tabBarIcon: ({color,size}) => (
-              <FileText 
-                className='size-6'
-                color={color}
-              />
-            )
-          }}
-        />
-        <Tabs.Screen 
-          name='modules'
-          options={{
-            headerTitle: () => (
-              <View>
-                <Text className='text-lg font-semibold'>Learning Modules</Text>
-                <Text className='text-sm dark:text-gray-400 text-gray-600'>Access all course materials</Text>
-              </View>
-            ),
-            tabBarLabel: "Modules",
-            tabBarIcon: ({color,size}) => (
-              <BookOpen 
-                className='size-6'
-                color={color}
-              />
-            )
-          }}
-        />
-        <Tabs.Screen 
-          name='announcement'
-          options={{
-            headerTitle: () => (
-              <View>
-                <Text className='text-lg font-semibold'>Announcements</Text>
-                <Text className='text-sm dark:text-gray-400 text-gray-600'>Stay updated with class news</Text>
-              </View>
-            ),
-            tabBarLabel: "Announcements",
-            tabBarIcon: ({color,size}) =>(
-              <Bell 
-                className='size-6'
-                color={color}
-              />
-            )
-          }}
-        />
-      </Tabs>
+        <Tabs screenOptions={{ tabBarActiveTintColor: colorScheme === 'dark' ? 'white' : 'black' }}>
+          <Tabs.Screen 
+            name='index'
+            options={{
+              ...SCREEN_OPTIONS[colorScheme ?? "light"],
+              tabBarLabel: "Home",
+              tabBarIcon: ({color, size}) =>(
+                <House 
+                  className='size-6'
+                  color={color}
+                />
+              )
+            }}
+          />
+          <Tabs.Screen 
+            name='activities'
+            options={{
+              headerTitle: () => (
+                <View>
+                  <Text className='text-lg font-semibold'>Activities</Text>
+                  <Text className='text-sm dark:text-gray-400 text-gray-600'>Assignments, quizzes & tasks</Text>
+                </View>
+              ),
+              tabBarLabel: "Activities",
+              tabBarIcon: ({color,size}) => (
+                <FileText 
+                  className='size-6'
+                  color={color}
+                />
+              )
+            }}
+          />
+          <Tabs.Screen 
+            name='modules'
+            options={{
+              headerTitle: () => (
+                <View>
+                  <Text className='text-lg font-semibold'>Learning Modules</Text>
+                  <Text className='text-sm dark:text-gray-400 text-gray-600'>Access all course materials</Text>
+                </View>
+              ),
+              tabBarLabel: "Modules",
+              tabBarIcon: ({color,size}) => (
+                <BookOpen 
+                  className='size-6'
+                  color={color}
+                />
+              )
+            }}
+          />
+          <Tabs.Screen 
+            name='announcement'
+            options={{
+              headerTitle: () => (
+                <View>
+                  <Text className='text-lg font-semibold'>Announcements</Text>
+                  <Text className='text-sm dark:text-gray-400 text-gray-600'>Stay updated with class news</Text>
+                </View>
+              ),
+              tabBarLabel: "Announcements",
+              tabBarIcon: ({color,size}) =>(
+                <Bell 
+                  className='size-6'
+                  color={color}
+                />
+              )
+            }}
+          />
+        </Tabs>
       <PortalHost />
     </ThemeProvider>
   );
