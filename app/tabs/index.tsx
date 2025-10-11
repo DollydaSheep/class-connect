@@ -28,10 +28,10 @@ export default function Screen() {
 
   return (
     <>
-      <ScrollView className='flex-1 bg-foreground/5'>
-        <LoginScreen />
-      </ScrollView>
-      
+      <View className='flex-1 bg-foreground/5'>
+        <LoginScreen />   
+      </View>
+        
     </>
   );
 }

@@ -44,9 +44,19 @@ export default function RootLayout() {
   if(role === null){
     return(
       <>
-        <View className='flex-1 bg-background'>
-          <LoginScreen />
-        </View>
+        <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
+          <Stack>
+            <Stack.Screen
+              name="index"
+              options={{
+                title: "ClassConnect",
+                headerStyle: { backgroundColor: colorScheme === 'dark' ? THEME.dark.background : THEME.light.background },
+                headerTintColor: colorScheme === 'dark' ? '#fff' : '#000',
+                headerTitleStyle: { fontWeight: "bold" },
+              }}
+            />
+          </Stack>
+        </ThemeProvider>
       </>
     )
   }
