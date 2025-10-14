@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import '@/global.css';
-import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useUserRole';
+
 
 import { NAV_THEME, THEME } from '@/lib/theme';
 import { ThemeProvider } from '@react-navigation/native';
@@ -39,9 +40,9 @@ const SCREEN_OPTIONS = {
 
 export default function RootLayout() {
   const { colorScheme } = useColorScheme();
-  const { role } = useUserRole();
+  const { user } = useAuth();
 
-  if(role === null){
+  if(user === null){
     return(
       <>
         <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>

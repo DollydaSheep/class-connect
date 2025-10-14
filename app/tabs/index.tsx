@@ -2,9 +2,11 @@ import UpcomingActivitiesHome from '@/components/activitiesHome';
 import AnnouncementsHomeComponent from '@/components/announcementsHome';
 import ClassesComponent from '@/components/classes';
 import LoginScreen from '@/components/loginScreen';
+import SignUpScreen from '@/components/signUpScreen';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useAuth } from '@/hooks/useUserRole';
 import { THEME } from '@/lib/theme';
 import { Link, Stack } from 'expo-router';
 import { Bell, Ellipsis, FileText, MoonStarIcon, Plus, PlusCircle, StarIcon, SunIcon } from 'lucide-react-native';
@@ -25,14 +27,36 @@ const IMAGE_STYLE: ImageStyle = {
 
 export default function Screen() {
   const { colorScheme } = useColorScheme();
+  const [isLogin, setIsLogin] = React.useState(true);
 
-  return (
+  const { user } = useAuth();
+
+  if(!user){
+    return (
+      <>
+        <View className='flex-1 bg-foreground/5'>
+          {isLogin ? (
+            <LoginScreen onSwitch={()=>setIsLogin(false)} />
+          ) : (
+            <SignUpScreen onSwitch={()=>setIsLogin(true)} />
+          )}
+        </View>
+          
+      </>
+    );
+  }
+  return(
     <>
-      <View className='flex-1 bg-foreground/5'>
-        <LoginScreen />   
+      <View className='px-2'>
+        <ScrollView>
+          <ClassesComponent />
+
+          <AnnouncementsHomeComponent />
+
+          <UpcomingActivitiesHome />
+        </ScrollView>
       </View>
-        
     </>
-  );
+  )
 }
 

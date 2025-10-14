@@ -1,34 +1,20 @@
-import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+// hooks/useAuth.ts
 import { useEffect, useState } from "react";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export function useUserRole() {
-  const [role, setRole] = useState<string | null>(null);
-  
-  useEffect(()=> {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
 
-    const unsubcribe = onAuthStateChanged(auth, async (user) => {
-      if(user){
-        try{
-          const userDoc = await getDoc(doc(db, "User", user.uid));
-          if(userDoc.exists()){
-            const userData = userDoc.data();
-            setRole(userData.role || "student");
-          } else {
-            setRole("student");
-          }
-        } catch(err) {
-          console.error("Error fetching user: ", err);
-        }
-      } else {
-        setRole(null);
-      }
-    })
+    return () => unsubscribe();
+  }, []);
 
-    return () => unsubcribe();
-  },[]);
-
-  return { role };
+  return { user, loading };
 }
