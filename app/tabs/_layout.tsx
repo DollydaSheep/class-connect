@@ -11,7 +11,7 @@ import { ThemeProvider } from '@react-navigation/native';
 import { PortalHost } from '@rn-primitives/portal';
 import { Stack, Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Bell, BookOpen, FileText, House, MoonStarIcon, SunIcon } from 'lucide-react-native';
+import { Bell, BookOpen, FileText, House, MoonStarIcon, SunIcon, User2 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { View } from 'react-native';
 
@@ -127,6 +127,23 @@ export default function RootLayout() {
               tabBarLabel: "Announcements",
               tabBarIcon: ({color,size}) =>(
                 <Bell 
+                  className='size-6'
+                  color={color}
+                />
+              )
+            }}
+          />
+          <Tabs.Screen 
+            name='profile'
+            options={{
+              headerTitle: () => (
+                <View>
+                  <Text className='text-lg font-semibold'>Profile</Text>
+                </View>
+              ),
+              tabBarLabel: "Profile",
+              tabBarIcon: ({color,size}) =>(
+                <User2 
                   className='size-6'
                   color={color}
                 />

@@ -47,7 +47,7 @@ export default function Screen() {
   }
   return(
     <>
-      <View className='px-2'>
+      <View className='p-2'>
         <ScrollView>
           <ClassesComponent />
 
