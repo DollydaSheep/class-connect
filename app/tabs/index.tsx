@@ -1,5 +1,6 @@
 import UpcomingActivitiesHome from '@/components/activitiesHome';
 import AnnouncementsHomeComponent from '@/components/announcementsHome';
+import CalendarComponent from '@/components/calendarHome';
 import ClassesComponent from '@/components/classes';
 import LoginScreen from '@/components/loginScreen';
 import SignUpScreen from '@/components/signUpScreen';
@@ -50,6 +51,8 @@ export default function Screen() {
       <View className='p-2'>
         <ScrollView>
           <ClassesComponent />
+
+          <CalendarComponent />
 
           <AnnouncementsHomeComponent />
 

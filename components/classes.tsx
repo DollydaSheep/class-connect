@@ -4,7 +4,7 @@ import { Animated, Pressable, ScrollView, TextInput, TouchableOpacity, View } fr
 import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Ellipsis, Plus } from "lucide-react-native";
+import { Ellipsis, Plus, Scroll } from "lucide-react-native";
 import { getClasses, subscribeToClasses, Class, addClass, deleteClass } from '@/lib/services/classService';
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "./modal";
@@ -19,20 +19,20 @@ export default function ClassesComponent() {
   const [visible, setVisible] = useState(false);
   const [classCode, setClassCode] = useState("");
 
-  useEffect(() => {
-    const unsubscribe = subscribeToClasses(
-      (updatedClasses) => {
-        console.log('Classes updated:', updatedClasses);
-        setClasses(updatedClasses);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Subscription error:', error);
-        setLoading(false);
-      }
-    );
-    return () => unsubscribe();
-  }, []);
+  // useEffect(() => {
+  //   const unsubscribe = subscribeToClasses(
+  //     (updatedClasses) => {
+  //       console.log('Classes updated:', updatedClasses);
+  //       setClasses(updatedClasses);
+  //       setLoading(false);
+  //     },
+  //     (error) => {
+  //       console.error('Subscription error:', error);
+  //       setLoading(false);
+  //     }
+  //   );
+  //   return () => unsubscribe();
+  // }, []);
 
   const handleFetchClasses = async () => {
     setLoading(true);
@@ -73,7 +73,7 @@ export default function ClassesComponent() {
 
   return(
     <>
-      <View className='flex flex-row justify-between items-center w-full' >
+      <View className='flex flex-row justify-between items-center w-full mb-2' >
         <Text className="font-semibold my-2">Your classes</Text>
         <Pressable 
           className='rounded-full bg-foreground p-2 active:opacity-70 active:scale-95' 
@@ -83,7 +83,7 @@ export default function ClassesComponent() {
         </Pressable>
       </View>
 
-      {loading ? (
+      {/* {loading ? (
         <Text>No Class</Text>
       ) : classes.map((classItem, index) => (
         <View key={index} className='bg-background p-4 rounded-lg'>
@@ -115,7 +115,168 @@ export default function ClassesComponent() {
               
           </View>
         </View>
-      ))} 
+      ))}  */}
+      
+      <ScrollView horizontal={true} className="mb-2">
+      <View className="flex flex-column gap-2">
+        <View className="flex flex-row gap-2">
+          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
+            <View className='flex flex-row justify-between'>
+              <View className='flex flex-row items-start gap-4'>
+                <View className='px-4 py-3 bg-violet-500 rounded-lg'>
+                  <Text className='text-white'>C</Text>
+                </View>
+                <View>
+                  <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>CE Comprehensive Course 1</Text>
+                  <Text className='text-xs font-light'>Prof. Justin</Text>
+                  <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
+                </View>
+              </View> 
+                <DropdownMenu
+                  trigger={
+                    <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                }
+                >
+                  <DropdownMenuItem 
+                    label="Delete"
+                    onPress={() => handleDeleteClass("1")}
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    label="Edit"
+                  />
+                </DropdownMenu>
+                
+            </View>
+          </View>
+
+          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
+            <View className='flex flex-row justify-between'>
+              <View className='flex flex-row items-start gap-4'>
+                <View className='px-4 py-3 bg-blue-500 rounded-lg'>
+                  <Text className='text-white'>R</Text>
+                </View>
+                <View>
+                  <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>Reinforced Concrete Design</Text>
+                  <Text className='text-xs font-light'>Prof. Justin</Text>
+                  <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
+                </View>
+              </View> 
+                <DropdownMenu
+                  trigger={
+                    <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                }
+                >
+                  <DropdownMenuItem 
+                    label="Delete"
+                    onPress={() => handleDeleteClass("1")}
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    label="Edit"
+                  />
+                </DropdownMenu>
+                
+            </View>
+          </View>
+
+          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
+            <View className='flex flex-row justify-between'>
+              <View className='flex flex-row items-start gap-4'>
+                <View className='px-4 py-3 bg-yellow-500 rounded-lg'>
+                  <Text className='text-white'>C</Text>
+                </View>
+                <View>
+                  <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>CE Project I</Text>
+                  <Text className='text-xs font-light'>Prof. Justin</Text>
+                  <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
+                </View>
+              </View> 
+                <DropdownMenu
+                  trigger={
+                    <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                }
+                >
+                  <DropdownMenuItem 
+                    label="Delete"
+                    onPress={() => handleDeleteClass("1")}
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    label="Edit"
+                  />
+                </DropdownMenu>
+                
+            </View>
+          </View>
+
+          
+        </View>
+
+        <View className="flex flex-row gap-2">
+          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
+            <View className='flex flex-row justify-between'>
+              <View className='flex flex-row items-start gap-4'>
+                <View className='px-4 py-3 bg-red-500 rounded-lg'>
+                  <Text className='text-white'>B</Text>
+                </View>
+                <View>
+                  <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>Bridge Design</Text>
+                  <Text className='text-xs font-light'>Prof. Justin</Text>
+                  <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
+                </View>
+              </View> 
+                <DropdownMenu
+                  trigger={
+                    <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                }
+                >
+                  <DropdownMenuItem 
+                    label="Delete"
+                    onPress={() => handleDeleteClass("1")}
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    label="Edit"
+                  />
+                </DropdownMenu>
+                
+            </View>
+          </View>
+
+          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
+            <View className='flex flex-row justify-between'>
+              <View className='flex flex-row items-start gap-4'>
+                <View className='px-4 py-3 bg-cyan-500 rounded-lg'>
+                  <Text className='text-white'>T</Text>
+                </View>
+                <View>
+                  <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>Technopreneurship I</Text>
+                  <Text className='text-xs font-light'>Prof. Justin</Text>
+                  <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
+                </View>
+              </View> 
+                <DropdownMenu
+                  trigger={
+                    <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                }
+                >
+                  <DropdownMenuItem 
+                    label="Delete"
+                    onPress={() => handleDeleteClass("1")}
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    label="Edit"
+                  />
+                </DropdownMenu>
+                
+            </View>
+          </View>
+
+        </View>
+      </View>
+      </ScrollView>
 
       {/* Modal */}
       <Modal
