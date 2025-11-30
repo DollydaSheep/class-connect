@@ -28,7 +28,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
       {/* Backdrop */}
       <View className="flex-1 bg-black/70 items-center justify-center">
         {/* Modal Container */}
-        <View className="bg-gray-100 dark:bg-neutral-900 rounded-2xl w-[90%] h-[75%] overflow-hidden shadow-2xl ">
+        <View className="bg-gray-100 dark:bg-neutral-900 rounded-2xl w-[90%] h-[65%] overflow-hidden shadow-2xl ">
 
           {/* Header */}
           <View className="flex-row items-center justify-between p-4">

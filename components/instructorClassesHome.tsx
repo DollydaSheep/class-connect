@@ -1,13 +1,12 @@
 "use client"
 
-import { Animated, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import { Animated, Modal, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Ellipsis, Plus, Scroll } from "lucide-react-native";
+import { Ellipsis, Plus, Scroll, X } from "lucide-react-native";
 import { getClasses, subscribeToClasses, Class, addClass, deleteClass } from '@/lib/services/classService';
 import { useEffect, useRef, useState } from "react";
-import { Modal } from "./modal";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 import { router } from "expo-router";
 
@@ -77,6 +76,12 @@ export default function InstructorClassesComponent() {
       <View>
 				<View className='flex flex-row justify-between items-center w-full mb-2' >
 					<Text className="font-semibold my-2">Your classes</Text>
+					<Pressable 
+						className='rounded-full bg-foreground p-2 active:opacity-70 active:scale-95' 
+						onPress={()=> setVisible(true)}
+					>
+						<Icon as={Plus} className='size-6 text-background' />  
+					</Pressable>
 				</View>
 
 				<Pressable key={1} onPress={()=>{router.push({
@@ -116,16 +121,83 @@ export default function InstructorClassesComponent() {
 
 				{/* Modal */}
 				<Modal
+					visible={visible}
+					transparent={true}
+					animationType="fade"
+				>
+					<View className="flex-1 bg-black/50 flex flex-row justify-center items-center">
+						<View className="bg-gray-100 dark:bg-neutral-900 p-4 w-[90%] rounded-lg">
+							<View className="flex flex-row justify-between mb-4">
+								<Text className="text-2xl font-semibold text-gray-900 dark:text-white">Add Classs</Text>
+								<Pressable 
+									className='rounded-full bg-foreground/20 p-2 active:opacity-70 active:scale-95 self-center' 
+									onPress={()=> setVisible(false)}
+								>
+									<Icon as={X} className='size-4 text-background' />  
+								</Pressable>
+							</View>
+							<View className="flex flex-col items-start">
+								<Text className="mb-2">Subject</Text>
+								<TextInput 
+									className="w-full bg-foreground/10 p-4 rounded-lg text-foreground mb-2"
+									placeholder="e.g., Mathematics"
+									placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+									value={classCode}
+									onChangeText={setClassCode}
+								/>
+								<Text className="mb-2">Class Section</Text>
+								<TextInput 
+									className="w-full bg-foreground/10 p-4 rounded-lg text-foreground mb-2"
+									placeholder="e.g., BSCE 4 Day"
+									placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+									value={classCode}
+									onChangeText={setClassCode}
+								/>
+								<Text className="mb-2">Description</Text>
+								<TextInput 
+									className="w-full bg-foreground/10 p-4 pb-12 rounded-lg text-foreground mb-2"
+									placeholder="A Short Description about this class..."
+									placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+									value={classCode}
+									onChangeText={setClassCode}
+								/>
+								<Pressable 
+									className="py-2 px-3 rounded-lg bg-foreground/10 active:opacity-75 self-end"
+									onPress={handleJoin}
+								>
+									<Text>Join</Text>
+								</Pressable>
+							</View>
+						</View>
+					</View>
+				</Modal>
+				{/* <Modal
 					isOpen={visible}
 					onClose={() => setVisible(false)}
-					title="Join Class"
+					title="Add Class"
 				>
 					<ScrollView>
 						<View className="flex flex-col items-start">
-							<Text className="mb-2">Class Code</Text>
+							<Text className="mb-2">Subject</Text>
 							<TextInput 
 								className="w-full bg-foreground/10 p-4 rounded-lg text-foreground mb-2"
-								placeholder="e.g., MATH303"
+								placeholder="e.g., Mathematics"
+								placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+								value={classCode}
+								onChangeText={setClassCode}
+							/>
+							<Text className="mb-2">Class Section</Text>
+							<TextInput 
+								className="w-full bg-foreground/10 p-4 rounded-lg text-foreground mb-2"
+								placeholder="e.g., BSCE 4 Day"
+								placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+								value={classCode}
+								onChangeText={setClassCode}
+							/>
+							<Text className="mb-2">Description</Text>
+							<TextInput 
+								className="w-full bg-foreground/10 p-4 pb-12 rounded-lg text-foreground mb-2"
+								placeholder="A Short Description about this class..."
 								placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
 								value={classCode}
 								onChangeText={setClassCode}
@@ -138,7 +210,7 @@ export default function InstructorClassesComponent() {
 							</Pressable>
 						</View>
 					</ScrollView>
-				</Modal>
+				</Modal> */}
 			</View>
       
     </>
