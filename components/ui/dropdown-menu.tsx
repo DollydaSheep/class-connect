@@ -25,6 +25,8 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
 }) => {
   const [visible, setVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const triggerRef = useRef<View>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (visible) {

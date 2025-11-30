@@ -9,6 +9,7 @@ import { getClasses, subscribeToClasses, Class, addClass, deleteClass } from '@/
 import { useEffect, useRef, useState } from "react";
 import { Modal } from "./modal";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
+import { router } from "expo-router";
 
 
 export default function ClassesComponent() {
@@ -117,38 +118,43 @@ export default function ClassesComponent() {
         </View>
       ))}  */}
       
-      <ScrollView horizontal={true} className="mb-2">
+      <ScrollView horizontal={true} showsHorizontalScrollIndicator={false} className="mt-4 mb-2 overflow-visible">
       <View className="flex flex-column gap-2">
         <View className="flex flex-row gap-2">
-          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
-            <View className='flex flex-row justify-between'>
-              <View className='flex flex-row items-start gap-4'>
-                <View className='px-4 py-3 bg-violet-500 rounded-lg'>
-                  <Text className='text-white'>C</Text>
-                </View>
-                <View>
-                  <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>CE Comprehensive Course 1</Text>
-                  <Text className='text-xs font-light'>Prof. Justin</Text>
-                  <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
-                </View>
-              </View> 
-                <DropdownMenu
-                  trigger={
-                    <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
-                }
-                >
-                  <DropdownMenuItem 
-                    label="Delete"
-                    onPress={() => handleDeleteClass("1")}
-                  />
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    label="Edit"
-                  />
-                </DropdownMenu>
-                
+          <Pressable key={1} onPress={()=>{router.push({
+            pathname: '/(class)/[classid]',
+            params: { classid: "1" }
+          })}}>
+            <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
+              <View className='flex flex-row justify-between'>
+                <View className='flex flex-row items-start gap-4'>
+                  <View className='px-4 py-3 bg-violet-500 rounded-lg'>
+                    <Text className='text-white'>C</Text>
+                  </View>
+                  <View>
+                    <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>CE Comprehensive Course 1</Text>
+                    <Text className='text-xs font-light'>Prof. Justin</Text>
+                    <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
+                  </View>
+                </View> 
+                  <DropdownMenu
+                    trigger={
+                      <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
+                  }
+                  >
+                    <DropdownMenuItem 
+                      label="Delete"
+                      onPress={() => handleDeleteClass("1")}
+                    />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      label="Edit"
+                    />
+                  </DropdownMenu>
+                  
+              </View>
             </View>
-          </View>
+          </Pressable>
 
           <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
             <View className='flex flex-row justify-between'>
@@ -244,8 +250,8 @@ export default function ClassesComponent() {
             </View>
           </View>
 
-          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
-            <View className='flex flex-row justify-between'>
+          <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis overflow-visible'>
+            <View className='flex flex-row justify-between z-99'>
               <View className='flex flex-row items-start gap-4'>
                 <View className='px-4 py-3 bg-cyan-500 rounded-lg'>
                   <Text className='text-white'>T</Text>

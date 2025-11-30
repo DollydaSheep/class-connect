@@ -43,12 +43,11 @@ export default function CalendarComponent(){
 				<View className='flex flex-row justify-center'>
 					<View 
 						style={{
-							height: 360,          // ✅ REQUIRED (no %)
 							width: 320,
 							overflow: "hidden",  // ✅ Prevents render glitches
 						}}>
 						<Calendar
-							style={{borderRadius: 20, height: 340}}
+							style={{borderRadius: 20, height: 370}}
 							theme={{
 								backgroundColor: '#ffffff',
 								calendarBackground: '#ffffff',
