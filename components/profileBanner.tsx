@@ -6,20 +6,24 @@ import { useColorScheme } from "nativewind";
 import { THEME } from "@/lib/theme";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { supabase } from "@/lib/supabase";
 
 
 export default function ProfileBanner() {
   const { colorScheme } = useColorScheme();
 
   const handleLogout = async () => {
-    signOut(auth)
-      .then(() => {
-        console.log("Signed out")
-      })
-      .catch((err) => {
-        console.error(err.message);
-      })
-  }
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) throw error;
+
+      console.log("Signed out");
+    } catch (err: any) {
+      console.error("Logout error:", err.message);
+    }
+  };
+
 
   return (
     <>

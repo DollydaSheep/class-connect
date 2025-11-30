@@ -1,10 +1,11 @@
 import { Text } from '@/components/ui/text';
 import { THEME } from '@/lib/theme';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, FileText } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
 import { Animated, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
+import { Icon } from './ui/icon';
 
 export default function CalendarComponent(){
 
@@ -16,16 +17,83 @@ export default function CalendarComponent(){
 	
 	const [showComponent, setShowComponent] = useState(true)
 
+	const [selectedDate, setSelectedDate] = useState(today);
+	const [monthDate, setMonthDate] = useState(today)
+
+	type Activity = {
+		title: string;
+		subject: string
+	};
+
+	const activitiesByDate: Record<string, Activity[]> = {
+		"2025-11-26": [{title: "Chapter 5 Quiz", subject: "CE Comprehensive Course 1" }],
+		"2025-12-05": [{title: "Chapter 6 Quiz", subject: "Calculus 1" }],
+	};
+
+	const markedDates: Record<string, any> = {};
+
+	const lightTheme = {
+    backgroundColor: THEME.light.background,
+    calendarBackground: THEME.light.background,
+    textSectionTitleColor: '#000',
+    dayTextColor: '#000',
+    todayTextColor: '#FF0000',
+    selectedDayBackgroundColor: '#6200EE',
+    selectedDayTextColor: '#FFFFFF',
+    arrowColor: '#6200EE',
+    monthTextColor: '#000',
+    textDisabledColor: '#AAA',
+    dotColor: '#6200EE',
+    selectedDotColor: '#FFF',
+  };
+
+  const darkTheme = {
+    backgroundColor: THEME.dark.background,
+    calendarBackground: THEME.dark.background,
+    textSectionTitleColor: '#FFF',
+    dayTextColor: '#FFF',
+    todayTextColor: '#FF4500',
+    selectedDayBackgroundColor: '#BB86FC',
+    selectedDayTextColor: '#000',
+    arrowColor: '#BB86FC',
+    monthTextColor: '#FFF',
+    textDisabledColor: '#555',
+    dotColor: '#BB86FC',
+    selectedDotColor: '#000',
+  };
+
+	Object.keys(activitiesByDate).forEach(date => {
+		markedDates[date] = {
+			marked: true, // shows a dot
+			dotColor: '#d38843ff', // optional custom dot color
+		};
+	});
+
+	markedDates[selectedDate] = {
+		...(markedDates[selectedDate] || {}),
+		selected: true,
+		selectedColor: '#d38843ff',
+		selectedTextColor: 'white',
+		dotColor: 'white'
+	};
+
 	useEffect(() => {
 		// ✅ Forces correct layout calculation on Android
 		const timer = setTimeout(() => setReady(true), 120);
 		return () => clearTimeout(timer);
 	}, []);
 
+	const [theme, setTheme] = useState(colorScheme);
+
+  useEffect(() => {
+    // When the system color scheme changes, update state
+    setTheme(colorScheme);
+  }, [colorScheme]);
+
   return(
 		<>
 			<Pressable onPress={()=>setShowComponent(!showComponent)}>
-				<View className='flex flex-row justify-between items-center mr-2'>
+				<View className='flex flex-row justify-between items-center mr-2 overflow-visible'>
 					<Text className="font-semibold my-2">Activity Calendar</Text>
 					{showComponent === true ? (
 						<ChevronUp 
@@ -40,55 +108,30 @@ export default function CalendarComponent(){
 			</Pressable>
 
 			{showComponent && (
-				<View className='flex flex-row justify-center'>
+				<View className='flex flex-column items-center'>
 					<View 
 						style={{
 							width: 320,
 							overflow: "hidden",  // ✅ Prevents render glitches
 						}}>
 						<Calendar
+							key={`${colorScheme}-${selectedDate}-${monthDate}`}
 							style={{borderRadius: 20, height: 370}}
-							theme={{
-								backgroundColor: '#ffffff',
-								calendarBackground: '#ffffff',
-								textSectionTitleColor: '#b6c1cd',
-								textSectionTitleDisabledColor: '#d9e1e8',
-								selectedDayBackgroundColor: '#00adf5',
-								selectedDayTextColor: '#ffffff',
-								todayTextColor: '#00adf5',
-								dayTextColor: '#2d4150',
-								textDisabledColor: '#2d4150',
-								dotColor: '#00adf5',
-								selectedDotColor: '#ffffff',
-								arrowColor: 'orange',
-								disabledArrowColor: '#d9e1e8',
-								monthTextColor: 'blue',
-								indicatorColor: 'blue',
-								textDayFontFamily: 'monospace',
-								textMonthFontFamily: 'monospace',
-								textDayHeaderFontFamily: 'monospace',
-								textDayFontWeight: '300',
-								textMonthFontWeight: 'bold',
-								textDayHeaderFontWeight: '300',
-								textDayFontSize: 16,
-								textMonthFontSize: 16,
-								textDayHeaderFontSize: 16
-							}}
+							theme={colorScheme === 'dark' ? darkTheme : lightTheme}
 							// Initially visible month. Default = now
-							initialDate={today}
+							initialDate={monthDate}
 							// Handler which gets executed on day press. Default = undefined
 							onDayPress={day => {
 								console.log('selected day', day);
+								setSelectedDate(day.dateString);
 							}}
-							// Handler which gets executed on day long press. Default = undefined
-							onDayLongPress={day => {
-								console.log('selected day', day);
-							}}
+							
 							// Month format in calendar title. Formatting values: http://arshaw.com/xdate/#Formatting
 							monthFormat={'yyyy MMMM'}
 							// Handler which gets executed when visible month changes in calendar. Default = undefined
 							onMonthChange={month => {
 								console.log('month changed', month);
+								setMonthDate(month.dateString)
 							}}
 							// Hide month navigation arrows. Default = false
 							hideArrows={false}
@@ -109,14 +152,36 @@ export default function CalendarComponent(){
 							// Disable left arrow. Default = false
 							
 							enableSwipeMonths={true}
-							markedDates={{
-								[today]: {
-									selected: true,
-									selectedColor: "#4CAF50",
-									selectedTextColor: "white",
-								},
-							}}
+							markedDates={markedDates}
 						/>
+					</View>
+					<View className="-mt-2 w-full p-4 border border-border rounded-lg">
+						<Text className="font-semibold mb-2">
+							Activities on {selectedDate}
+						</Text>
+
+						{(activitiesByDate[selectedDate]?.length ?? 0) === 0 ? (
+							<Text className="text-sm text-muted-foreground">
+								No activities for this date
+							</Text>
+						) : (
+							activitiesByDate[selectedDate].map((item, index) => (
+								<View
+									key={index}
+									className="border border-border rounded-lg p-3 mb-2 flex flex-row items-center gap-2"
+								>
+									<View className='p-2.5 bg-orange-300 rounded-lg self-start'>
+										<View>
+											<Icon as={FileText} className='size-5 text-orange-600' />
+										</View>
+									</View>
+									<View>
+										<Text className='font-bold'>{item.title}</Text>
+										<Text className='text-xs font-light'>{item.subject}</Text>
+									</View>
+								</View>
+							))
+						)}
 					</View>
 				</View>
 			)}

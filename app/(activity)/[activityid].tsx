@@ -143,10 +143,10 @@ export default function TicketDetails() {
 				<Pressable>
 					<View className='p-3 flex flex-row justify-center items-center gap-2 bg-violet-600 rounded-lg'>
 						<Send 
-							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
+							color={THEME.light.background}
 							size={20}
 						/>
-						<Text className='font-bold'>Submit Assignment</Text>
+						<Text className='font-bold text-white'>Submit Assignment</Text>
 					</View>
 				</Pressable>
 			</View>

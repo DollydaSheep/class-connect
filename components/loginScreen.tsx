@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 
 export default function LoginScreen({ onSwitch }: { onSwitch: () => void}) {
@@ -23,13 +24,20 @@ export default function LoginScreen({ onSwitch }: { onSwitch: () => void}) {
     }
 
     setLoading(true);
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      Alert.alert("Success", `Welcome back, ${user.email}`);
-      // 🔹 You can navigate to home screen here (e.g. router.push('/home'))
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      Alert.alert("Success", `Welcome back, ${data.user?.email}`);
+      // ✅ e.g. router.push("/home")
+
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login error:", error.message);
       Alert.alert("Login Failed", error.message);
     } finally {
       setLoading(false);

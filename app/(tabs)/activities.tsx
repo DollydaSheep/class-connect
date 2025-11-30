@@ -43,7 +43,7 @@ export default function ActivitiesTab() {
         <Pressable
           key={1} onPress={()=>{router.push({
           pathname: '/(activity)/[activityid]',
-          params: { classid: "1" }
+          params: { activityid: "1" }
         })}}>
           <View className='bg-background border border-border p-4 rounded-lg'>
             <View className='flex flex-row justify-between'>

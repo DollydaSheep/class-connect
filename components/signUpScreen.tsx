@@ -11,6 +11,7 @@ import { auth, db } from "@/lib/firebase";
 import { useState } from "react";
 import { THEME } from "@/lib/theme";
 import { doc, setDoc } from "firebase/firestore";
+import { supabase } from "@/lib/supabase";
 
 
 export default function SignUpScreen({ onSwitch }: { onSwitch: () => void}) {
@@ -35,10 +36,12 @@ export default function SignUpScreen({ onSwitch }: { onSwitch: () => void}) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
+
     if (password !== confirm) {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
+
     if (!checked) {
       Alert.alert("Error", "Please agree to the Terms of Service");
       return;
@@ -46,26 +49,42 @@ export default function SignUpScreen({ onSwitch }: { onSwitch: () => void}) {
 
     try {
       setLoading(true);
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCred.user;
 
-      // Save user role and info to Firestore
-      await setDoc(doc(db, "Users", user.uid), {
-        firstName,
-        lastName,
+      // ✅ 1. Create account in Supabase Auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
-        role: selectedRole,
-        createdAt: new Date(),
+        password,
       });
 
-      Alert.alert("Success", "Account created successfully!");
-    } catch (err) {
-      console.error(err);
-      if (err instanceof Error) {
-        Alert.alert("Sign Up Failed", err.message);
-      } else {
-        Alert.alert("Sign Up Failed", "An unknown error occurred");
+      if (signUpError) throw signUpError;
+
+      const user = data.user;
+
+      if (!user) {
+        throw new Error("User creation failed");
       }
+
+      // ✅ 2. Save profile to Supabase Database (public.users table)
+      const { error: insertError } = await supabase
+        .from("users")
+        .insert([
+          {
+            id: user.id, // same as auth.uid
+            first_name: firstName,
+            last_name: lastName,
+            email,
+            role: selectedRole,
+            created_at: new Date(),
+          },
+        ]);
+
+      if (insertError) throw insertError;
+
+      Alert.alert("Success", "Account created successfully!");
+      
+    } catch (err: any) {
+      console.error("Sign Up Error:", err.message);
+      Alert.alert("Sign Up Failed", err.message || "An unknown error occurred");
     } finally {
       setLoading(false);
     }
