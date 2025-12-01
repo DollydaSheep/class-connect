@@ -56,7 +56,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
       {/* Menu Overlay */}
       
         {visible && (
-          <View className="w-[1500%] h-[1500%] absolute -top-[300px] right-0 z-50 bg-transparent">
+          <View className="w-[1500%] h-[1500%] absolute -top-[300px] right-0 z-50 bg-transparent" style={{zIndex: 20}}>
             <Pressable 
               onPress={()=>setVisible(false)} 
               className="absolute inset-0 bg-transparent"  
