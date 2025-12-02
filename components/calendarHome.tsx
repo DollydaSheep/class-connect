@@ -3,7 +3,7 @@ import { THEME } from '@/lib/theme';
 import { Calendar1, ChevronDown, ChevronUp, Ellipsis, FileText, Plus, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
-import { Animated, Modal, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
 import { Icon } from './ui/icon';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -23,12 +23,13 @@ export default function CalendarComponent(){
 	const [selectedDate, setSelectedDate] = useState(today);
 	const [selectedDateTimeStamp, setSelectedDateTimeStamp] = useState<any | null>()
 	const [monthDate, setMonthDate] = useState(today)
-	const [showModal, setShowModal] = useState(false);
+	const [showModal, setShowModal] = useState("");
 	const [openDatePicker, setOpenDatePicker] = useState(false);
 
 	const [taskTitle, setTaskTitle] = useState('');
 	const [taskDescription, setTaskDescription] = useState('');
 	const [pickedColor, setPickedColor] = useState(1);
+	const [editTaskId, setEditTaskId] = useState('')
 
 	const [toggleTaskDropdown, setToggleTaskDropdown] = useState<number | null>();
 
@@ -135,7 +136,6 @@ export default function CalendarComponent(){
   }, [colorScheme]);
 
 	const handleFetchTasks = async () => {
-		setLoading(true);
 
 		try {
 			const {
@@ -167,7 +167,7 @@ export default function CalendarComponent(){
 		} catch (err) {
 			console.error("Fetch tasks failed:", err);
 		} finally {
-			setLoading(false);
+
 		}
 	};
 
@@ -176,6 +176,7 @@ export default function CalendarComponent(){
 	}, []);
 
 	const handleAddTask = async () => {
+		setLoading(true)
 		try {
 			if (!taskTitle || !taskDescription ) {
 				alert("Title and date are required");
@@ -206,11 +207,14 @@ export default function CalendarComponent(){
 			if (error) throw error;
 
 			console.log("Task added:", data);
+
+			setLoading(false)
+
 			alert("Task added successfully ✅");
 			setTaskTitle('')
 			setTaskDescription('')
 			setPickedColor(0);
-			setShowModal(false)
+			setShowModal("")
 			await handleFetchTasks();
 
 		} catch (err: any) {
@@ -223,9 +227,98 @@ export default function CalendarComponent(){
 		setToggleTaskDropdown(prev => (prev === index ? null : index));
 	};
 
+	const handleDeleteTask = async (taskId: string) => {
+		setLoading(true);
+		try {
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) throw new Error("Not authenticated");
+
+			const { error } = await supabase
+				.from("student_personalised_task")
+				.delete()
+				.eq("id", taskId)
+				.eq("student_id", user.id); // ✅ Security check
+
+			if (error) throw error;
+
+			setLoading(false);
+			setToggleTaskDropdown(null)
+
+			alert("Task deleted ✅");
+
+			await handleFetchTasks(); // ✅ Refresh list
+
+		} catch (err: any) {
+			console.error("Delete task failed:", err);
+			alert(err.message || "Failed to delete task");
+		}
+	};
+
+	const handleEditTask = async () => {
+		setLoading(true)
+		try {
+			if (!taskTitle || !taskDescription) {
+				alert("Title and description are required");
+				return;
+			}
+
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) {
+				throw new Error("Not authenticated");
+			}
+
+			const { data, error } = await supabase
+				.from("student_personalised_task")
+				.update({
+					task_title: taskTitle.trim(),
+					description: taskDescription.trim(),
+					task_color: colors[pickedColor],
+					task_date: selectedDateTimeStamp,
+				})
+				.eq("id", editTaskId)          // ✅ target the specific task
+				.eq("student_id", user.id) // ✅ security: only edit own task
+				.select()
+				.single();
+
+			if (error) throw error;
+
+			console.log("Task updated:", data);
+			setLoading(false);
+			alert("Task updated successfully ✅");
+
+			// ✅ Reset form
+			setTaskTitle("");
+			setTaskDescription("");
+			setPickedColor(0);
+			setShowModal("");
+
+			await handleFetchTasks(); // ✅ refresh list
+
+		} catch (err: any) {
+			console.error("Edit task failed:", err);
+			alert(err.message || "Failed to update task");
+		}
+	};
+
+	const handleEditTaskModal = (index: number) => {
+		setShowModal("Edit");
+		setTaskTitle(tasksForSelectedDate[index].task_title)
+		setTaskDescription(tasksForSelectedDate[index].description)
+		setPickedColor(Math.max(0, colors.indexOf(tasksForSelectedDate[index].task_color)));
+		setEditTaskId(tasksForSelectedDate[index].id)
+	}
+
   return(
 		<>
-			<Pressable onPress={()=>setShowComponent(!showComponent)}>
+			<Pressable className='active:opacity-75' onPress={()=>setShowComponent(!showComponent)}>
 				<View className='flex flex-row justify-between items-center mr-2 overflow-visible'>
 					<Text className="font-semibold my-2">Activity Calendar</Text>
 					{showComponent === true ? (
@@ -258,6 +351,7 @@ export default function CalendarComponent(){
 								console.log('selected day', day);
 								setSelectedDate(day.dateString);
 								setSelectedDateTimeStamp(new Date(day.timestamp).toISOString())
+								setToggleTaskDropdown(null);
 							}}
 							
 							// Month format in calendar title. Formatting values: http://arshaw.com/xdate/#Formatting
@@ -266,6 +360,7 @@ export default function CalendarComponent(){
 							onMonthChange={month => {
 								console.log('month changed', month);
 								setMonthDate(month.dateString)
+								setToggleTaskDropdown(null);
 							}}
 							// Hide month navigation arrows. Default = false
 							hideArrows={false}
@@ -306,9 +401,9 @@ export default function CalendarComponent(){
 									
 								>
 									<View className='flex flex-row gap-2'>
-										<View className='p-2.5 bg-orange-300 rounded-lg self-start'>
+										<View className={`p-2.5 rounded-lg self-start`} style={{backgroundColor: `${task.task_color}`, borderRadius: 10}}>
 											<View>
-												<Icon as={FileText} className='size-5 text-orange-600' />
+												<Icon as={FileText} className='size-5 text-white' />
 											</View>
 										</View>
 										<View>
@@ -317,14 +412,14 @@ export default function CalendarComponent(){
 										</View>
 									</View>
 									{/* Dropdown Menu */}
-									<Pressable onPress={()=>handleTaskDropdown(index)} className='relative' style={{elevation: 1, zIndex: 1}}>
+									<Pressable onPress={()=>handleTaskDropdown(index)} className='relative active:opacity-75' style={{elevation: 1, zIndex: 1}}>
 										<Icon as={Ellipsis} className='size-5 text-foreground mr-2' />
 										{toggleTaskDropdown === index && (
 											<View className='w-20 border border-border bg-background rounded-lg absolute -top-4 right-8' style={{zIndex: 20}}>
-												<Pressable>
+												<Pressable onPress={()=>handleEditTaskModal(index)}>
 													<Text className='p-2'>Edit</Text>
 												</Pressable>
-												<Pressable className='border-t border-border'>
+												<Pressable onPress={()=>handleDeleteTask(task.id)} className='border-t border-border'>
 													<Text className='p-2'>Delete</Text>
 												</Pressable>
 											</View>
@@ -333,11 +428,11 @@ export default function CalendarComponent(){
 								</View>
 							))
 						)}
-						<Pressable onPress={()=>setShowModal(true)}>
-							<View className='mt-2 flex flex-row items-center gap-2'>
+						<Pressable className='active:opacity-75' onPress={()=>setShowModal("Add")}>
+							<View className='mt-2 flex flex-row items-center gap-2' style={{zIndex: 1}}>
 								<View className='p-1.5 bg-foreground/20 rounded-full self-center'>
 									<View>
-										<Icon as={Plus} className='size-3 text-foreground' />
+										<Icon as={Plus} className='size-3 text-white' />
 									</View>
 								</View>
 									<Text className='text-sm'>Add Personalised Task</Text>
@@ -348,16 +443,16 @@ export default function CalendarComponent(){
 			)}
 			<Modal
 				transparent={true}
-				visible={showModal}
+				visible={showModal !== ""}
 				animationType='fade'
 			>
 				<View className='flex-1 flex-row justify-center items-center bg-black/40'>
 					<View className="bg-gray-100 dark:bg-neutral-900 p-4 w-[90%] rounded-lg">
 						<View className="flex flex-row justify-between">
-							<Text className="text-lg font-semibold text-gray-900 dark:text-white">Add Personalised Task</Text>
+							<Text className="text-lg font-semibold text-gray-900 dark:text-white">{showModal === "Edit" ? "Edit" : showModal === "Add" ? "Add" : ""} Personalised Task</Text>
 							<Pressable 
 								className='rounded-full bg-foreground/20 p-2 active:opacity-70 active:scale-95 self-center' 
-								onPress={()=> setShowModal(false)}
+								onPress={()=> setShowModal("")}
 							>
 								<Icon as={X} className='size-4 text-background' />  
 							</Pressable>
@@ -404,13 +499,22 @@ export default function CalendarComponent(){
 								</Pressable>
 							</View>
 							<Pressable 
-								className="py-2 px-3 rounded-lg bg-foreground/10 active:opacity-75 self-end"
-								onPress={handleAddTask}
+								className="py-2 px-3 rounded-lg bg-foreground/20 active:opacity-75 self-end"
+								onPress={()=>showModal === "Add" ? handleAddTask() : showModal === "Edit" ? handleEditTask() : ""}
 							>
-								<Text>Add</Text>
+								<Text className='text-white'>{showModal === "Add" ? "Add" : showModal === "Edit" ? "Edit" : ""}</Text>
 							</Pressable>
 						</View>
 					</View>
+				</View>
+			</Modal>
+			<Modal
+				transparent
+				animationType='fade'
+				visible={loading}
+			>
+				<View className='flex-1 bg-black/50 flex flex-row justify-center items-center'>
+					<ActivityIndicator size={50} />
 				</View>
 			</Modal>
 		</>

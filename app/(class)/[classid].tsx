@@ -70,25 +70,29 @@ export default function TicketDetails() {
         }}
       />
       <View className='flex-1'>
-				<View className='absolute bottom-16 right-8'>
-					<Pressable 
-						className='rounded-full bg-foreground p-2 active:opacity-70 active:scale-95 self-start' 
-						onPress={()=>setShowAdd(!showAdd)}
-					>
-						<Icon as={Plus} className='size-8 text-background' />  
-					</Pressable>
-					{showAdd && (
-						<View className='absolute -top-40 right-0'>
-							<View className='bg-background border border-border rounded-lg'>
-								<Text className='w-full p-3'>+ Announcement </Text>
-								<View className='w-full border-t border-border'></View>
-								<Text className='w-full p-3'>+ Activity</Text>
-								<View className='w-full border-t border-border'></View>
-								<Text className='w-full p-3'>+ Module</Text>
+				{role === "instructor" && (
+					<View className='absolute bottom-16 right-8'>
+						<Pressable 
+							className='rounded-full bg-foreground p-2 active:opacity-70 active:scale-95 self-start' 
+							onPress={()=>setShowAdd(!showAdd)}
+						>
+							<Icon as={Plus} className='size-8 text-background' />  
+						</Pressable>
+						{showAdd && (
+							<View className='absolute -top-40 right-0'>
+								<View className='bg-background border border-border rounded-lg'>
+									<Text className='w-full p-3'>+ Announcement </Text>
+									<View className='w-full border-t border-border'></View>
+									<Pressable onPress={()=>router.push('/addActivity')}>
+										<Text className='w-full p-3'>+ Activity</Text>
+									</Pressable>
+									<View className='w-full border-t border-border'></View>
+									<Text className='w-full p-3'>+ Module</Text>
+								</View>
 							</View>
-						</View>
-					)}
-				</View>
+						)}
+					</View>
+				)}
 				<View className='px-2 py-4 bg-foreground/5'>
 					<Text className='text-xl font-medium'>CE Comprehensive Course 1</Text>
 				</View>

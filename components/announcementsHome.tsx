@@ -15,7 +15,7 @@ export default function AnnouncementsHomeComponent() {
 
   return(
     <>
-      <Pressable onPress={()=>setShowComponent(!showComponent)}>
+      <Pressable className='active:opacity-75' onPress={()=>setShowComponent(!showComponent)}>
         <View className='flex flex-row justify-between my-2 mr-2'>
           <Text className="font-semibold">Recent Announcements</Text>
           {showComponent === true ? (
