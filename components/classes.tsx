@@ -192,7 +192,7 @@ export default function ClassesComponent() {
             return (
               <Pressable key={index} onPress={()=>{router.push({
                 pathname: '/(class)/[classid]',
-                params: { classid: "1" }
+                params: { classid: classItem.id }
               })}}>
                 <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis' style={{zIndex: 1}}>
                   <View className='flex flex-row justify-between'>
@@ -273,7 +273,7 @@ export default function ClassesComponent() {
             return (
               <Pressable key={index} onPress={()=>{router.push({
                 pathname: '/(class)/[classid]',
-                params: { classid: "1" }
+                params: { classid: classItem.id }
               })}}>
                 <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
                   <View className='flex flex-row justify-between'>

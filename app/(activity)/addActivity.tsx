@@ -5,26 +5,32 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { THEME } from '@/lib/theme';
 import { collection, query, where, getDocs, getDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { Calendar, ChevronDown, Clock, Download, FileText, MessageSquare, Paperclip, Plus, Send, Upload, Zap } from 'lucide-react-native';
+import { Calendar, ChevronDown, Clock, Download, FileText, MessageSquare, Paperclip, Pencil, Plus, Send, Upload, Zap } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { useColorScheme } from 'nativewind';
 import { TextInput } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from 'expo-document-picker';
+import { supabase } from '@/lib/supabase';
 
 
 export default function TicketDetails() {
 
 	const { colorScheme } = useColorScheme();
 
-  const { activityid } = useLocalSearchParams();
+  const { classid } = useLocalSearchParams();
   const [ticket, setTicket] = useState<any | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
 	const [selected, setSelected] = useState(1);
-	const [dueDate, setDueDate] = useState<Date | null>(null);
 	const [openDatePicker, setOpenDatePicker] = useState(false);
+
+	const [activityName, setActivityName] = useState('');
+	const [dueDate, setDueDate] = useState<Date | null>(null);
+	const [points, setPoints] = useState('');
+	const [description, setDescription] = useState('');
+	const [instructions, setInstructions] = useState('');
 
 	const [attachment, setAttachment] = useState<any[]>([])
 
@@ -59,6 +65,63 @@ export default function TicketDetails() {
 		return (bytes / (1024 * 1024)).toFixed(2);
 	};
 
+	const handleAddActivity = async () => {
+		try {
+			if (!activityName || !dueDate || !points) {
+				alert("Activity name, due date, and points are required");
+				return;
+			}
+
+			setLoading(true);
+
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) {
+				throw new Error("Not authenticated");
+			}
+
+			const { data, error } = await supabase
+				.from("class_activity")
+				.insert({
+					class_id: classid,                 // ✅ from route param
+					instructor_id: user.id,               // ✅ creator
+					activity_name: activityName.trim(),
+					description: description.trim(),
+					instructions: instructions.trim(),
+					points: Number(points),
+					due_date: dueDate.toISOString(),      // ✅ correct timestamp
+					file_attachments: attachment,              // ✅ JSON array
+					created_at: new Date().toISOString()
+				})
+				.select()
+				.single();
+
+			if (error) throw error;
+
+			console.log("Activity added:", data);
+			alert("Activity added successfully ✅");
+
+			// ✅ Reset form
+			setActivityName('');
+			setPoints('');
+			setDescription('');
+			setInstructions('');
+			setAttachment([]);
+			setDueDate(null);
+
+			router.back();
+
+		} catch (err: any) {
+			console.error("Add activity failed:", err);
+			alert(err.message || "Failed to add activity");
+		} finally {
+			setLoading(false);
+		}
+	};
+
   return (
     <>
       <Stack.Screen 
@@ -81,7 +144,8 @@ export default function TicketDetails() {
 							className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
 							placeholder="e.g., Activity Quiz"
 							placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-							
+							value={activityName}
+							onChangeText={setActivityName}
 						/>
 				</View>
         <View className='p-4 rounded-lg gap-4'>
@@ -114,6 +178,24 @@ export default function TicketDetails() {
 					)}
 					
 				</View>
+				<View className='p-4 rounded-lg gap-4'>
+					<View className='flex flex-row items-center gap-2'>
+						<Pencil 
+							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
+							size={18}
+						/>
+						<Text>Points</Text>
+					</View>
+					<TextInput 
+						keyboardType='numeric'
+						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
+						placeholder="e.g., 50"
+						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+						value={points}
+						onChangeText={setPoints}
+					/>
+					
+				</View>
 				<View className='p-4 border border-border rounded-lg gap-3'>
 					<View className='flex flex-row items-center gap-2'>
 						<FileText 
@@ -128,7 +210,8 @@ export default function TicketDetails() {
 						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
 						placeholder="e.g., Activity Quiz"
 						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-						
+						value={description}
+						onChangeText={setDescription}
 					/>
 				</View>
 				<View className='p-4 border border-border rounded-lg gap-3'>
@@ -145,7 +228,8 @@ export default function TicketDetails() {
 						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
 						placeholder="e.g., Activity Quiz"
 						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-						
+						value={instructions}
+						onChangeText={setInstructions}
 					/>
 				</View>
 				<View className='p-4 border border-border rounded-lg gap-2'>
@@ -183,13 +267,13 @@ export default function TicketDetails() {
 					</Pressable>
 					
 				</View>		
-				<Pressable>
+				<Pressable onPress={handleAddActivity}>
 					<View className='p-3 flex flex-row justify-center items-center gap-2 bg-violet-600 rounded-lg'>
 						<Send 
 							color={THEME.light.background}
 							size={20}
 						/>
-						<Text className='font-bold text-white'>Submit Assignment</Text>
+						<Text className='font-bold text-white w-[100px]'>Add Activity</Text>
 					</View>
 				</Pressable>
 			</View>

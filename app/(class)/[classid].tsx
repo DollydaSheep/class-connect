@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/icon';
 import { useColorScheme } from 'nativewind';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useUserRole';
+import Skeletonbox from '@/components/skeleton/skeletonbox';
 
 
 
@@ -22,15 +23,72 @@ export default function TicketDetails() {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 	const [showAdd, setShowAdd] = useState(false);
+	const [showEmpty, setShowEmpty] = useState(false);
 
 	const [selected, setSelected] = useState(1);
 
+	const [activities, setActivities] = useState<any[]>([]);
+
 	const { user } = useAuth();
+
+	const handleFetchActivities = async () => {
+		try {
+			setLoading(true);
+			setShowEmpty(false); // ✅ Reset empty state
+
+			const { data, error } = await supabase
+				.from("class_activity")
+				.select(`
+					id,
+					class_id,
+					instructor_id,
+					activity_name,
+					description,
+					instructions,
+					points,
+					due_date,
+					file_attachments,
+					created_at,
+					status,
+					class (
+						subject
+					)
+				`)
+				.eq("class_id", String(classid))
+				.order("due_date", { ascending: true });
+
+			if (error) throw error;
+
+			console.log("Fetched activities:", data);
+			setActivities(data || []);
+
+			// ✅ Show empty message after 2 seconds if no activities
+			if (!data || data.length === 0) {
+				setTimeout(() => {
+					setShowEmpty(true);
+					setLoading(false);
+				}, 2000);
+			} else {
+				setLoading(false)
+			}
+
+		} catch (err: any) {
+			console.error("Fetch activities failed:", err);
+			alert(err.message || "Failed to fetch activities");
+		} finally {
+			
+		}
+	};
+
+	useEffect(() => {
+		if (classid) {
+			handleFetchActivities();
+		}
+	}, [classid]);
 	
 	useEffect(() => {
 		if (!user) {
 			setRole(null);
-			setLoading(false);
 			return;
 		}
 
@@ -51,7 +109,6 @@ export default function TicketDetails() {
 				setRole(data.role);
 			}
 
-			setLoading(false);
 		};
 
 		fetchRole();
@@ -83,7 +140,10 @@ export default function TicketDetails() {
 								<View className='bg-background border border-border rounded-lg'>
 									<Text className='w-full p-3'>+ Announcement </Text>
 									<View className='w-full border-t border-border'></View>
-									<Pressable onPress={()=>router.push('/addActivity')}>
+									<Pressable onPress={()=>router.push({
+										pathname: '/(activity)/addActivity',
+										params: { classid: classid }
+									})}>
 										<Text className='w-full p-3'>+ Activity</Text>
 									</Pressable>
 									<View className='w-full border-t border-border'></View>
@@ -116,25 +176,50 @@ export default function TicketDetails() {
 					</View>
 					<View className='p-2'>
 						{selected === 1 && (
-							<View className='bg-background border border-border p-4 rounded-lg'>
-								<View className='flex flex-row justify-between'>
-									<View className='flex flex-row items-start gap-4'>
-										<View className='p-2.5 bg-orange-300 rounded-lg'>
-											<View>
-												<Icon as={FileText} className='size-5 text-orange-600' />
+							<>
+								{loading && (
+									<View className='gap-2 p-2'>
+										<Skeletonbox height={80} />
+										<Skeletonbox height={80} />
+										<Skeletonbox height={80} />
+									</View>
+								)}
+								{activities.length === 0 && !loading && showEmpty && (
+									<View className='p-2'>
+										<Text className='text-sm font-light'>No activities for this class.</Text>
+									</View>
+								)}
+								{activities.map((act, index) => (
+									<Pressable key={act.id || index} onPress={()=>router.push({
+										pathname: '/(activity)/[activityid]',
+										params: { activityid: act.id }
+									})}>
+										<View className='bg-background border border-border p-4 rounded-lg'>
+											<View className='flex flex-row justify-between'>
+												<View className='flex flex-row items-start gap-4'>
+													<View className='p-2.5 bg-orange-300 rounded-lg'>
+														<View>
+															<Icon as={FileText} className='size-5 text-orange-600' />
+														</View>
+													</View>
+													<View>
+														<Text className='font-medium'>{act.activity_name}</Text>
+														<Text className="text-xs font-light">{act.class.subject}</Text>
+														<Text className='text-sm font-medium dark:text-orange-400 text-orange-500'>
+															Due {new Date(act.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+														</Text>
+													</View>
+												</View>
+												<View className="self-end">
+													<Text className={`text-xs px-3 py-2 rounded-full ${act.status === 'Pending' ? "bg-orange-500/50" : act.status === 'Completed' ? "bg-green-400/50" : ""} text-foreground`}>
+														{act.status}
+													</Text>
+												</View>
 											</View>
 										</View>
-										<View>
-											<Text className='font-medium'>Chapter 5 Quiz</Text>
-											<Text className="text-xs font-light">Mathematics</Text>
-											<Text className='text-sm font-medium dark:text-orange-400 text-orange-500'>Due Oct 8</Text>
-										</View>
-									</View>
-									<View className="self-end">
-										<Text className="text-xs px-3 py-2 rounded-full bg-green-400/50 text-foreground">Completed</Text>
-									</View>
-								</View>
-							</View>
+									</Pressable>
+								))}
+							</>
 						)}
 					</View>
 				</View>
