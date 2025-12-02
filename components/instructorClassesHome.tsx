@@ -179,7 +179,7 @@ export default function InstructorClassesComponent() {
 					) : classes.map((classItem, index) => (
 						<Pressable key={index} onPress={()=>{router.push({
 							pathname: '/(class)/[classid]',
-							params: { classid: classItem.id }
+							params: { classid: classItem.id, classSection: classItem.class_section, subject: classItem.subject }
 						});console.log(classItem.id)}}>
 							<View className='bg-background p-4 border border-border rounded-lg'>
 								<View className='flex flex-row justify-between'>

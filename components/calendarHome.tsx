@@ -8,6 +8,7 @@ import { Calendar, CalendarList, Agenda } from 'react-native-calendars';
 import { Icon } from './ui/icon';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '@/lib/supabase';
+import { router } from 'expo-router';
 
 export default function CalendarComponent(){
 
@@ -35,6 +36,7 @@ export default function CalendarComponent(){
 
 	const [markedDates, setMarkedDates] = useState({});
 	const [tasks, setTasks] = useState<any[]>([]);
+	const [activities, setActivities] = useState<any[]>([]);
 
 	const colors = [
 		"#51a2ff", //Blue
@@ -57,6 +59,11 @@ export default function CalendarComponent(){
 	const tasksForSelectedDate = tasks.filter(task => {
 		const taskDate = task.task_date.split("T")[0]; // YYYY-MM-DD
 		return taskDate === selectedDate;
+	});
+
+	const activitiesForSelectedDate = activities.filter(activity => {
+		const activityDate = activity.due_date.split("T")[0]; // YYYY-MM-DD
+		return activityDate === selectedDate;
 	});
 
 	const lightTheme = {
@@ -89,27 +96,122 @@ export default function CalendarComponent(){
     selectedDotColor: '#000',
   };
 
+	const handleFetchActivities = async () => {
+		try {
+			setLoading(true);
+
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) {
+				throw new Error("Not authenticated");
+			}
+
+			// Step 1: Get all classes the student is enrolled in
+			const { data: enrollments, error: enrollError } = await supabase
+				.from("class_students")
+				.select("class_id")
+				.eq("student_id", user.id);
+
+			if (enrollError) throw enrollError;
+
+			if (!enrollments || enrollments.length === 0) {
+				setActivities([]);
+				setLoading(false);
+				return;
+			}
+
+			// Step 2: Get class IDs
+			const classIds = enrollments.map(e => e.class_id);
+
+			// Step 3: Fetch all activities from those classes
+			const { data: activitiesData, error: activitiesError } = await supabase
+				.from("class_activity")
+				.select(`
+					id,
+					class_id,
+					activity_name,
+					description,
+					points,
+					due_date,
+					status,
+					class (
+						subject
+					)
+				`)
+				.in("class_id", classIds)
+				.order("due_date", { ascending: true });
+
+			if (activitiesError) throw activitiesError;
+
+			console.log("Fetched activities:", activitiesData);
+			setActivities(activitiesData || []);
+
+		} catch (err: any) {
+			console.error("Fetch activities failed:", err);
+			alert(err.message || "Failed to fetch activities");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	useEffect(() => {
 		const marks: any = {};
 
-		// ✅ Group tasks by date and attach multiple dots
+		// ✅ Group tasks by date (existing code)
 		tasks.forEach(task => {
 			const dateKey = task.task_date.split("T")[0]; // YYYY-MM-DD
 
 			if (!marks[dateKey]) {
 				marks[dateKey] = {
 					dots: [],
+					colors: new Set(), // ✅ Track unique colors
 				};
 			}
 
-			// ✅ Add one dot per task
-			marks[dateKey].dots.push({
-				key: task.id,
-				color: task.task_color || "#22c55e",
-			});
+			const color = task.task_color || "#22c55e";
+			
+			// ✅ Only add if color doesn't exist
+			if (!marks[dateKey].colors.has(color)) {
+				marks[dateKey].dots.push({
+					key: task.id,
+					color: color,
+				});
+				marks[dateKey].colors.add(color);
+			}
 		});
 
-		// ✅ Apply selected date styling (merge with existing dots)
+		// ✅ Add activity due dates to calendar
+		activities.forEach(activity => {
+			const dateKey = activity.due_date.split("T")[0]; // YYYY-MM-DD
+
+			if (!marks[dateKey]) {
+				marks[dateKey] = {
+					dots: [],
+					colors: new Set(), // ✅ Track unique colors
+				};
+			}
+
+			const color = "#ffc9c9"; // Orange color for activities
+
+			// ✅ Only add if color doesn't exist
+			if (!marks[dateKey].colors.has(color)) {
+				marks[dateKey].dots.push({
+					key: `activity-${activity.id}`,
+					color: color,
+				});
+				marks[dateKey].colors.add(color);
+			}
+		});
+
+		// ✅ Clean up the colors Set before setting state
+		Object.keys(marks).forEach(key => {
+			delete marks[key].colors; // Remove the Set, not needed in final state
+		});
+
+		// ✅ Apply selected date styling
 		if (selectedDate) {
 			marks[selectedDate] = {
 				...(marks[selectedDate] || {}),
@@ -120,7 +222,12 @@ export default function CalendarComponent(){
 		}
 
 		setMarkedDates(marks);
-	}, [tasks, selectedDate]);
+	}, [tasks, activities, selectedDate]);
+
+	// ✅ Fetch activities on component mount
+	useEffect(() => {
+		handleFetchActivities();
+	}, []);
 
 	useEffect(() => {
 		// ✅ Forces correct layout calculation on Android
@@ -389,9 +496,40 @@ export default function CalendarComponent(){
 							Activities on {selectedDate}
 						</Text>
 
+						{activitiesForSelectedDate.map((activity) => (
+							<Pressable key={activity.id} onPress={()=>router.push({
+								pathname: '/(activity)/[activityid]',
+								params: { activityid: activity.id }
+							})}>
+								<View className='bg-background border border-border p-4 rounded-lg mb-2'>
+									<View className='flex flex-row items-start gap-4'>
+										<View className='p-2.5 bg-orange-300 rounded-lg'>
+											<Icon as={FileText} className='size-5 text-orange-600' />
+										</View>
+										<View className='flex-1'>
+											<Text className='font-medium'>{activity.activity_name}</Text>
+											<Text className="text-xs font-light">{activity.class?.subject}</Text>
+											<Text className='text-xs'>{activity.description}</Text>
+											<Text className='text-sm font-medium dark:text-orange-400 text-orange-500'>
+												{activity.points} points
+											</Text>
+										</View>
+										<View className="self-end">
+											<Text className={`text-xs px-3 py-2 rounded-full ${
+												activity.status === 'Pending' ? "bg-orange-500/50" : 
+												activity.status === 'Completed' ? "bg-green-400/50" : ""
+											} text-foreground`}>
+												{activity.status}
+											</Text>
+										</View>
+									</View>
+								</View>
+							</Pressable>
+						))}
+
 						{tasksForSelectedDate.length === 0 ? (
 							<Text className="text-sm text-muted-foreground">
-								No activities for this date
+								No personalised activities for this date
 							</Text>
 						) : (
 							tasksForSelectedDate.map((task, index) => (
