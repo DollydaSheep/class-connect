@@ -24,63 +24,72 @@ export default function TicketDetails() {
 
 	const [selected, setSelected] = useState(1);
 
-	const [activity,setActivity] = useState<any>()
+	const [announcement, setAnnouncement] = useState<any>()
 
-	// const handleFetchActivity = async () => {
-	// 	try {
-	// 		setLoading(true);
+	const handleFetchAnnouncement = async () => {
+		try {
+			setLoading(true);
 
-	// 		const {
-	// 			data: { user },
-	// 			error: authError,
-	// 		} = await supabase.auth.getUser();
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
 
-	// 		if (!user || authError) {
-	// 			throw new Error("Not authenticated");
-	// 		}
+			if (!user || authError) {
+				throw new Error("Not authenticated");
+			}
 
-	// 		const { data, error } = await supabase
-	// 			.from("class_activity")
-	// 			.select(`
-	// 				id,
-	// 				class_id,
-	// 				instructor_id,
-	// 				activity_name,
-	// 				description,
-	// 				instructions,
-	// 				points,
-	// 				due_date,
-	// 				file_attachments,
-	// 				created_at,
-	// 				class (
-	// 					subject
-	// 				)
-	// 			`)
-	// 			.eq("id", activityid)      // ✅ filter by instructor
-	// 			.order("due_date", { ascending: true });
+			const { data, error } = await supabase
+				.from("class_announcement")
+				.select(`
+					id,
+					class_id,
+					instructor_id,
+					announcement_title,
+					content,
+					created_at,
+					users (
+						first_name,
+						last_name
+					),
+					class (
+						subject
+					)
+				`)
+				.eq("id", announcementid)      // ✅ filter by instructor
 
-	// 		if (error) throw error;
+			if (error) throw error;
 
-	// 		console.log("Fetched activities:", data);
-	// 		setActivity(data || []);
-	// 		console.log(activity)
+			console.log("Fetched announcement:", data);
+			setAnnouncement(data || []);
+			console.log(announcement)
 
-	// 	} catch (err: any) {
-	// 		console.error("Fetch activities failed:", err);
-	// 		alert(err.message || "Failed to fetch activities");
-	// 	} finally {
-	// 		setLoading(false);
-	// 	}
-	// };
+		} catch (err: any) {
+			console.error("Fetch announcement failed:", err);
+			alert(err.message || "Failed to fetch announcement");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-	// useEffect(() => {
-	// 	if (activityid) {
-	// 		handleFetchActivity();
-	// 	}
-	// }, [activityid]);
+	useEffect(() => {
+		if (announcementid) {
+			handleFetchAnnouncement();
+		}
+	}, [announcementid]);
 
-	const formatMB = (bytes: number) => {
-		return (bytes / (1024 * 1024)).toFixed(2);
+	const formatDateTime = (timestamp: string | Date) => {
+		const date = new Date(timestamp);
+
+		return date.toLocaleString("en-US", {
+			weekday: "short",   // Wed
+			month: "short",     // Oct
+			day: "2-digit",     // 08
+			year: "numeric",   // 2025
+			hour: "numeric",   // 10
+			minute: "2-digit", // 00
+			hour12: true,      // AM/PM
+		}).replace(",", " at"); // replaces first comma with " at"
 	};
 
   return (
@@ -91,11 +100,15 @@ export default function TicketDetails() {
           headerTitle: () => (
             <>
               <View className='py-2 flex flex-row items-center gap-2'>				
-								<Icon as={Bell} className='size-8 text-foreground -ml-4' />			
-								<View>
-									<Text className='text-lg font-bold'>Midterm Exam Schedule</Text>
-									<Text className='text-sm font-light pb-2'>Mathematics 101</Text>		
-								</View>										
+								{announcement && (
+									<>
+										<Icon as={Bell} className='size-8 text-foreground -ml-4' />			
+										<View>
+											<Text className='text-lg font-bold'>{announcement[0].announcement_title}</Text>
+											<Text className='text-sm font-light pb-2'>{announcement[0].class.subject}</Text>		
+										</View>		
+									</>
+								)}								
 							</View>
             </>
           )
@@ -103,50 +116,16 @@ export default function TicketDetails() {
       />
 			<ScrollView className='mb-12'>
       <View className='p-2 gap-3'>
-        <View className='p-4 border border-border rounded-lg'>
-					<Text className='font-semibold text-foreground'>Prof. Justin Nabunturan</Text>
-					<Text className='font-light text-foreground'>October 5, 2025</Text>	
-					<View className='border-t border-border my-2'></View>
-					<Text>
-						{`Dear Students,
-
-I hope this message finds you well. I am writing to inform you about the upcoming midterm examination schedule for Mathematics 101.
-
-The midterm exam will be held on October 15, 2024, from 2:00 PM to 4:00 PM in Room 305, Science Building.
-
-Exam Coverage:
-
-• Chapters 1-5: Limits, Continuity, and Derivatives  
-• All topics discussed in lectures and practice problems  
-• Application problems similar to homework assignments  
-
-Exam Format:
-
-• Part 1: Multiple Choice (20 questions - 40 points)  
-• Part 2: Problem Solving (4 problems - 60 points)  
-• Total: 100 points  
-
-What to Bring:
-
-• Valid student ID  
-• Scientific calculator (non-programmable)  
-• Blue or black pen  
-• Pencil and eraser  
-
-Important Reminders:
-
-• Arrive at least 10 minutes before the exam starts  
-• Review sessions will be held on October 12 and 13 from 4:00-5:30 PM  
-• Office hours extended this week for questions  
-
-Please reply to confirm your attendance. If you have any concerns or need special accommodations, contact me directly.
-
-Good luck with your preparation!
-
-Best regards,  
-Prof. Sarah Johnson`}
-					</Text>
-				</View>
+        {announcement && (
+					<View className='p-4 border border-border rounded-lg'>
+						<Text className='font-semibold text-foreground'>Prof. {announcement[0].users.first_name} {announcement[0].users.last_name}</Text>
+						<Text className='font-light text-foreground text-sm'>{formatDateTime(announcement[0].created_at)}</Text>	
+						<View className='border-t border-border my-2'></View>
+						<Text>
+							{`${announcement[0].content}`}
+						</Text>
+					</View>
+				)}
 			</View>
 			</ScrollView>
     </>
