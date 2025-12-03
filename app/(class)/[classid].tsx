@@ -5,7 +5,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { THEME } from '@/lib/theme';
 import { collection, query, where, getDocs, getDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { FileText, Plus, Zap } from 'lucide-react-native';
+import { Bell, ChevronRight, FileText, Plus, Zap } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { useColorScheme } from 'nativewind';
 import { supabase } from '@/lib/supabase';
@@ -62,7 +62,7 @@ export default function ClassDetails() {
 			if (error) throw error;
 
 			console.log("Fetched announcements:", data);
-			setModules(data || []);
+			setAnnouncements(data || []);
 
 			// ✅ Show empty message after 2 seconds if no activities
 			if (!data || data.length === 0) {
@@ -184,6 +184,7 @@ export default function ClassDetails() {
 	useEffect(() => {
 		setActivities([]);
 		setModules([]);
+		setAnnouncements([]);
 		if (classid) {
 			if(selected === 1){
 				handleFetchActivities();
@@ -222,6 +223,21 @@ export default function ClassDetails() {
 
 		fetchRole();
 	}, [user]);
+
+	const timeAgo = (timestamp: string | number | Date) => {
+		const now = new Date().getTime();
+		const created = new Date(timestamp).getTime();
+		const diffMs = now - created;
+
+		const minutes = Math.floor(diffMs / (1000 * 60));
+		const hours = Math.floor(diffMs / (1000 * 60 * 60));
+		const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+		if (minutes < 1) return "Just now";
+		if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+		if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+		return `${days} day${days > 1 ? "s" : ""} ago`;
+	};
 
   return (
     <>
@@ -420,6 +436,52 @@ export default function ClassDetails() {
 										<Text className="pt-2 text-xs font-light text-foreground/50">2 Files</Text>
 									</View>
 								</Pressable>
+							</>
+						)}
+						{selected === 3 && (
+							<>
+								{loading && (
+									<View className='gap-2 p-2'>
+										<Skeletonbox height={80} />
+										<Skeletonbox height={80} />
+										<Skeletonbox height={80} />
+									</View>
+								)}
+								{announcements.length === 0 && !loading && showEmpty && (
+									<View className='p-2'>
+										<Text className='text-sm font-light'>No announcements for this class.</Text>
+									</View>
+								)}
+								{announcements.map((announcement, index)=>(
+									<Pressable key={index} onPress={()=>{router.push({
+										pathname: '/(announcement)/[announcementid]',
+										params: { announcementid: announcement.id }
+									})}}
+									>
+										<View className='bg-background border border-border p-4 rounded-lg'>
+											<View className='flex flex-row justify-between'>
+												<View className='flex flex-row items-start gap-4'>
+													<View className='p-3 bg-blue-300 rounded-lg'>
+														<View>
+															<Icon as={Bell} className='size-4 text-blue-600' />
+														</View>
+													</View>
+													<View>
+														<Text numberOfLines={1} className='font-medium w-[190px] text-nowrap truncate'>{announcement.announcement_title}</Text>
+														<Text className="text-xs font-light">{announcement.class.subject}</Text>
+														<Text className='text-xs font-light'>Prof. {announcement.users.first_name} {announcement.users.last_name}</Text>
+														<Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>{timeAgo(announcement.created_at)}</Text>
+													</View>
+													<View className="self-end ml-4">
+														<ChevronRight 
+															color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
+														/>
+													</View>
+												</View>
+											</View>
+										</View>
+									</Pressable>
+								))}
 							</>
 						)}
 					</View>
