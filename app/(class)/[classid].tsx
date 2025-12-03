@@ -29,9 +29,58 @@ export default function ClassDetails() {
 
 	const [activities, setActivities] = useState<any[]>([]);
 	const [modules, setModules] = useState<any[]>([]);
+	const [announcements, setAnnouncements] = useState<any[]>([]);
 
 	const { user } = useAuth();
 
+	const handleFetchAnnouncements = async () => {
+		try {
+			setLoading(true);
+			setShowEmpty(false); // ✅ Reset empty state
+
+			const { data, error } = await supabase
+				.from("class_announcement")
+				.select(`
+					id,
+					class_id,
+					instructor_id,
+					announcement_title,
+					content,
+					created_at,
+					users (
+						first_name,
+						last_name
+					),
+					class (
+						subject,
+						class_section
+					)
+				`)
+				.eq("class_id", String(classid))
+				.order("created_at", { ascending: true });
+
+			if (error) throw error;
+
+			console.log("Fetched announcements:", data);
+			setModules(data || []);
+
+			// ✅ Show empty message after 2 seconds if no activities
+			if (!data || data.length === 0) {
+				setTimeout(() => {
+					setShowEmpty(true);
+					setLoading(false);
+				}, 2000);
+			} else {
+				setLoading(false)
+			}
+
+		} catch (err: any) {
+			console.error("Fetch announcements failed:", err);
+			alert(err.message || "Failed to fetch announcements");
+		} finally {
+			
+		}
+	};
 
 	const handleFetchModules = async () => {
 		try {
@@ -140,6 +189,8 @@ export default function ClassDetails() {
 				handleFetchActivities();
 			} else if(selected === 2){
 				handleFetchModules();
+			} else if(selected === 3){
+				handleFetchAnnouncements();
 			}
 		}
 	}, [classid, selected]);

@@ -66,7 +66,7 @@ export default function TicketDetails() {
 	const handleAddModule = async () => {
 		try {
 			if (!moduleName || !overview || !attachment) {
-				alert("Activity name, due date, and points are required");
+				alert("Module name, Module Overiew, and attachments are required");
 				return;
 			}
 

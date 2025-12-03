@@ -17,70 +17,64 @@ export default function TicketDetails() {
 
 	const { colorScheme } = useColorScheme();
 
-  const { announcementid } = useLocalSearchParams();
+  const { classid } = useLocalSearchParams();
   const [ticket, setTicket] = useState<any | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
 	const [selected, setSelected] = useState(1);
 
+	const [announcementTitle, setAnnouncementTitle] = useState('');
+	const [content, setContent] = useState('');
 	const [activity,setActivity] = useState<any>()
 
-	// const handleFetchActivity = async () => {
-	// 	try {
-	// 		setLoading(true);
+	const handleAddAnnouncement = async () => {
+		try {
+			if (!announcementTitle || !content ) {
+				alert("Announcement Title and content are required");
+				return;
+			}
 
-	// 		const {
-	// 			data: { user },
-	// 			error: authError,
-	// 		} = await supabase.auth.getUser();
+			setLoading(true);
 
-	// 		if (!user || authError) {
-	// 			throw new Error("Not authenticated");
-	// 		}
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
 
-	// 		const { data, error } = await supabase
-	// 			.from("class_activity")
-	// 			.select(`
-	// 				id,
-	// 				class_id,
-	// 				instructor_id,
-	// 				activity_name,
-	// 				description,
-	// 				instructions,
-	// 				points,
-	// 				due_date,
-	// 				file_attachments,
-	// 				created_at,
-	// 				class (
-	// 					subject
-	// 				)
-	// 			`)
-	// 			.eq("id", activityid)      // ✅ filter by instructor
-	// 			.order("due_date", { ascending: true });
+			if (!user || authError) {
+				throw new Error("Not authenticated");
+			}
 
-	// 		if (error) throw error;
+			const { data, error } = await supabase
+				.from("class_announcement")
+				.insert({
+					class_id: classid,                 // ✅ from route param
+					instructor_id: user.id,               // ✅ creator
+					announcement_title: announcementTitle.trim(),
+					content: content.trim(),             
+					created_at: new Date().toISOString()
+				})
+				.select()
+				.single();
 
-	// 		console.log("Fetched activities:", data);
-	// 		setActivity(data || []);
-	// 		console.log(activity)
+			if (error) throw error;
 
-	// 	} catch (err: any) {
-	// 		console.error("Fetch activities failed:", err);
-	// 		alert(err.message || "Failed to fetch activities");
-	// 	} finally {
-	// 		setLoading(false);
-	// 	}
-	// };
+			console.log("Announcement added:", data);
+			alert("Announcement added successfully ✅");
 
-	// useEffect(() => {
-	// 	if (activityid) {
-	// 		handleFetchActivity();
-	// 	}
-	// }, [activityid]);
+			// ✅ Reset form
+			setAnnouncementTitle('');
+			setContent('');
 
-	const formatMB = (bytes: number) => {
-		return (bytes / (1024 * 1024)).toFixed(2);
+			router.back();
+
+		} catch (err: any) {
+			console.error("Add announcement failed:", err);
+			alert(err.message || "Failed to add announcement");
+		} finally {
+			setLoading(false);
+		}
 	};
 
   return (
@@ -105,8 +99,8 @@ export default function TicketDetails() {
 						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
 						placeholder="e.g., Introduction to Mathematics"
 						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-						// value={moduleName}
-						// onChangeText={setModuleName}
+						value={announcementTitle}
+						onChangeText={setAnnouncementTitle}
 					/>
 				</View>
 				<View className='p-4 border border-border rounded-lg gap-3'>
@@ -123,11 +117,11 @@ export default function TicketDetails() {
 						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2 h-40"
 						placeholder="e.g., Activity Quiz"
 						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-						// value={description}
-						// onChangeText={setDescription}
+						value={content}
+						onChangeText={setContent}
 					/>
 				</View>
-				<Pressable onPress={()=>console.log()}>
+				<Pressable onPress={handleAddAnnouncement}>
 					<View className='p-3 flex flex-row justify-center items-center gap-2 bg-violet-600 rounded-lg'>
 						<Send 
 							color={THEME.light.background}
