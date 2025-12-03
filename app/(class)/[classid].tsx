@@ -106,7 +106,7 @@ export default function ClassDetails() {
 			setLoading(false);
 			setToggleTaskDropdown(null)
 
-			alert("Task deleted ✅");
+			alert("Announcement deleted ✅");
 
 			await handleFetchAnnouncements();
 
@@ -163,6 +163,38 @@ export default function ClassDetails() {
 			alert(err.message || "Failed to fetch modules");
 		} finally {
 			
+		}
+	};
+
+	const handleDeleteModule = async (moduleid: string) => {
+		setModules([]);
+		setLoading(true);
+		try {
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) throw new Error("Not authenticated");
+
+			const { error } = await supabase
+				.from("class_module")
+				.delete()
+				.eq("id", moduleid)
+				.eq("instructor_id", user.id); // ✅ Security check
+
+			if (error) throw error;
+
+			setLoading(false);
+			setToggleTaskDropdown(null)
+
+			alert("Module deleted ✅");
+
+			await handleFetchModules();
+
+		} catch (err: any) {
+			console.error("Delete module failed:", err);
+			alert(err.message || "Failed to delete module");
 		}
 	};
 
@@ -337,17 +369,17 @@ export default function ClassDetails() {
 				</View>
 				<View>
 					<View className='flex flex-row justify-evenly'>
-						<Pressable onPress={()=>setSelected(1)} className='grow'>
+						<Pressable onPress={()=>{setSelected(1); setToggleTaskDropdown(null)}} className='grow'>
 							<View className={`px-2 py-3 ${selected === 1 ? "rounded-t-md" : "bg-foreground/5"}`}>
 								<Text className={`text-center text-xs`}>Activities</Text>
 							</View>
 						</Pressable>
-						<Pressable onPress={()=>setSelected(2)} className='grow'>
+						<Pressable onPress={()=>{setSelected(2); setToggleTaskDropdown(null)}} className='grow'>
 							<View className={`px-2 py-3 ${selected === 2 ? "rounded-t-md" : "bg-foreground/5"}`}>
 								<Text className={`text-center text-xs`}>Module</Text>
 							</View>
 						</Pressable>
-						<Pressable onPress={()=>setSelected(3)} className='grow'>
+						<Pressable onPress={()=>{setSelected(3); setToggleTaskDropdown(null)}} className='grow'>
 							<View className={`px-2 py-3 ${selected === 3 ? "rounded-t-md" : "bg-foreground/5"}`}>
 								<Text className={`text-center text-xs`}>Announcements</Text>
 							</View>
@@ -439,7 +471,25 @@ export default function ClassDetails() {
 															<Text className="text-xs font-light">Prof. {module.users.first_name} {module.users.last_name}</Text>
 														)}
 													</View>
+													
 												</View>
+												<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
+													<Icon as={Ellipsis} className='size-5'/>
+												</Pressable>
+												{toggleTaskDropdown === index && (
+													<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+														<Pressable onPress={()=>
+															router.push({
+															pathname: '/(module)/editModule',
+															params: { moduleid: module.id, classid: classid }
+														})}>
+															<Text className='p-2'>Edit</Text>
+														</Pressable>
+														<Pressable onPress={()=>handleDeleteModule(module.id)} className='border-t border-border'>
+															<Text className='p-2'>Delete</Text>
+														</Pressable>
+													</View>
+												)}
 											</View>
 											<View className="pt-4">
 												<View className="border-t border-border"></View>
