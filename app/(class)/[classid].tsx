@@ -528,24 +528,28 @@ export default function ClassDetails() {
 													</View>
 													
 												</View>
-												<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
-													<Icon as={Ellipsis} className='size-5'/>
-												</Pressable>
-												{toggleTaskDropdown === index && (
-													<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
-														<Pressable onPress={()=>{
-															router.push({
-															pathname: '/(module)/editModule',
-															params: { moduleid: module.id, classid: classid }
-														})
-															setToggleTaskDropdown(null);
-														}}>
-															<Text className='p-2'>Edit</Text>
+												{role === 'instructor' && (
+													<>
+														<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
+															<Icon as={Ellipsis} className='size-5'/>
 														</Pressable>
-														<Pressable onPress={()=>handleDeleteModule(module.id)} className='border-t border-border'>
-															<Text className='p-2'>Delete</Text>
-														</Pressable>
-													</View>
+														{toggleTaskDropdown === index && (
+															<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+																<Pressable onPress={()=>{
+																	router.push({
+																	pathname: '/(module)/editModule',
+																	params: { moduleid: module.id, classid: classid }
+																})
+																	setToggleTaskDropdown(null);
+																}}>
+																	<Text className='p-2'>Edit</Text>
+																</Pressable>
+																<Pressable onPress={()=>handleDeleteModule(module.id)} className='border-t border-border'>
+																	<Text className='p-2'>Delete</Text>
+																</Pressable>
+															</View>
+														)}
+													</>
 												)}
 											</View>
 											<View className="pt-4">
@@ -555,32 +559,6 @@ export default function ClassDetails() {
 										</View>
 									</Pressable>
 								))}
-								<Pressable
-									key={1} onPress={()=>{router.push({
-									pathname: '/(module)/[moduleid]',
-									params: { moduleid: "1" }
-								})}}>
-									<View className='bg-background border border-border p-4 rounded-lg'>
-										<View className='flex flex-row justify-between'>
-											<View className='flex flex-row items-start gap-4'>
-												<View className='p-2.5 bg-orange-300 rounded-lg'>
-													<View>
-														<Icon as={FileText} className='size-5 text-orange-600' />
-													</View>
-												</View>
-												<View>
-													<Text className='font-medium'>Week 1 Module</Text>
-													<Text className='text-xs font-light'>CE Comrpehension Course 1</Text>
-													<Text className="text-xs font-light">Prof. Justin Nabunturan</Text>
-												</View>
-											</View>
-										</View>
-										<View className="pt-4">
-											<View className="border-t border-border"></View>
-										</View>
-										<Text className="pt-2 text-xs font-light text-foreground/50">2 Files</Text>
-									</View>
-								</Pressable>
 							</>
 						)}
 						{selected === 3 && (
@@ -617,25 +595,29 @@ export default function ClassDetails() {
 														<Text className='text-xs font-light'>Prof. {announcement.users.first_name} {announcement.users.last_name}</Text>
 														<Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>{timeAgo(announcement.created_at)}</Text>
 													</View>
-													<View className="self-stretch justify-between ml-4">
-														<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
-															<Icon as={Ellipsis} className='size-6'/>
-														</Pressable>
-														{toggleTaskDropdown === index && (
-															<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
-																<Pressable onPress={()=>{
-																	router.push({
-																	pathname: '/(announcement)/editAnnouncement',
-																	params: { announcementid: announcement.id, classid: classid }
-																})
-																	setToggleTaskDropdown(null);
-																}}>
-																	<Text className='p-2'>Edit</Text>
+													<View className={`${role === 'instructor' ? "self-stretch" : "self-end"} justify-between ml-4`}>
+														{role === 'instructor' && (
+															<>
+																<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
+																	<Icon as={Ellipsis} className='size-6'/>
 																</Pressable>
-																<Pressable onPress={()=>handleDeleteAnnouncement(announcement.id)} className='border-t border-border'>
-																	<Text className='p-2'>Delete</Text>
-																</Pressable>
-															</View>
+																{toggleTaskDropdown === index && (
+																	<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+																		<Pressable onPress={()=>{
+																			router.push({
+																			pathname: '/(announcement)/editAnnouncement',
+																			params: { announcementid: announcement.id, classid: classid }
+																		})
+																			setToggleTaskDropdown(null);
+																		}}>
+																			<Text className='p-2'>Edit</Text>
+																		</Pressable>
+																		<Pressable onPress={()=>handleDeleteAnnouncement(announcement.id)} className='border-t border-border'>
+																			<Text className='p-2'>Delete</Text>
+																		</Pressable>
+																	</View>
+																)}
+															</>
 														)}
 														<Icon as={ChevronRight} className='size-6 text-foreground self-end'/>
 													</View>
