@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import Skeletonbox from "./skeleton/skeletonbox";
 
 
 export default function ClassesComponent() {
@@ -128,6 +129,8 @@ export default function ClassesComponent() {
 
       alert("Successfully joined the class!");
 
+      setVisible(false)
+
       await handleFetchClasses()
     } catch (err: any) {
       console.error("Join class failed:", err);
@@ -157,7 +160,6 @@ export default function ClassesComponent() {
 
       setLoading(false);
       setToggleDropdown(null)
-      setClasses([]);
 
       alert("Unenrolled from Class ✅");
 
@@ -224,7 +226,10 @@ export default function ClassesComponent() {
         <View className="flex flex-row gap-2">
 
           {loading ? (
-						<></>
+						<View className="flex flex-row gap-2">
+              <Skeletonbox width={220} height={100} />
+              <Skeletonbox width={220} height={100} />
+            </View>
 					) : classes.map((classItem, index) => {
             if(index % 2 !== 0 ) return null;
             return (
@@ -266,7 +271,10 @@ export default function ClassesComponent() {
 
         <View className="flex flex-row gap-2">
           {loading ? (
-						<></>
+						<View className="flex flex-row gap-2">
+              <Skeletonbox width={220} height={100} />
+              <Skeletonbox width={220} height={100} />
+            </View>
 					) : classes.map((classItem, index) => {
             if(index % 2 === 0 ) return null;
             return (
