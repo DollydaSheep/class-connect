@@ -196,7 +196,12 @@ export default function ClassDetails() {
 						{showAdd && (
 							<View className='absolute -top-40 right-0'>
 								<View className='bg-background border border-border rounded-lg'>
-									<Text className='w-full p-3'>+ Announcement </Text>
+									<Pressable onPress={()=>{router.push({
+										pathname: '/(announcement)/addAnnouncement',
+										params: { classid: classid }
+									});setShowAdd(false)}}>
+										<Text className='w-full p-3'>+ Announcement </Text>
+									</Pressable>
 									<View className='w-full border-t border-border'></View>
 									<Pressable onPress={()=>{router.push({
 										pathname: '/(activity)/addActivity',
