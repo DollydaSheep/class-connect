@@ -5,7 +5,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { THEME } from '@/lib/theme';
 import { collection, query, where, getDocs, getDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { Book, BookOpen, Calendar, ChevronDown, Clock, Download, FileText, MessageSquare, Paperclip, Pencil, Plus, Send, Upload, Zap } from 'lucide-react-native';
+import { Calendar, ChevronDown, Clock, Download, FileText, MessageSquare, Paperclip, Pencil, Plus, Send, Upload, Zap } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { useColorScheme } from 'nativewind';
 import { TextInput } from 'react-native';
@@ -18,7 +18,7 @@ export default function TicketDetails() {
 
 	const { colorScheme } = useColorScheme();
 
-  const { moduleid ,classid } = useLocalSearchParams();
+  const { activityid ,classid } = useLocalSearchParams();
   const [ticket, setTicket] = useState<any | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,8 +26,10 @@ export default function TicketDetails() {
 	const [selected, setSelected] = useState(1);
 	const [openDatePicker, setOpenDatePicker] = useState(false);
 
-	const [moduleName, setModuleName] = useState('');
-	const [overview, setOverview] = useState('');
+	const [activityName, setActivityName] = useState('');
+	const [dueDate, setDueDate] = useState<Date | null>(null);
+	const [points, setPoints] = useState('');
+	const [description, setDescription] = useState('');
 	const [instructions, setInstructions] = useState('');
 
 	const [attachment, setAttachment] = useState<any[]>([])
@@ -63,10 +65,10 @@ export default function TicketDetails() {
 		return (bytes / (1024 * 1024)).toFixed(2);
 	};
 
-	const handleUpdateModule = async () => {
+	const handleUpdateActivity = async () => {
 		try {
-			if (!moduleName || !overview || !attachment ) {
-				alert("Module Name, Module Overview and File Attachment are required");
+			if (!activityName || !dueDate || !points || !attachment ) {
+				alert("Activity name, due date, points, and file attachment are required");
 				return;
 			}
 
@@ -82,41 +84,47 @@ export default function TicketDetails() {
 			}
 
 			const { data, error } = await supabase
-				.from("class_module")
+				.from("class_activity")
 				.update({
 					class_id: classid,                 // ✅ from route param
 					instructor_id: user.id,               // ✅ creator
-					module_name: moduleName.trim(),
-					module_overview: overview.trim(),
+					activity_name: activityName.trim(),
+					description: description.trim(),
+					instructions: instructions.trim(),
+					points: Number(points),
+					due_date: dueDate.toISOString(),      // ✅ correct timestamp
 					file_attachments: attachment,              // ✅ JSON array
 					// updated_at: new Date().toISOString(), // ✅ add this column if not yet present
 				})
-				.eq("id", moduleid)              // ✅ target specific announcement
+				.eq("id", activityid)              // ✅ target specific announcement
 				.eq("instructor_id", user.id)          // ✅ security check (optional but recommended)
 				.select()
 				.single();
 
 			if (error) throw error;
 
-			console.log("Module updated:", data);
-			alert("Module updated successfully ✅");
+			console.log("Activity updated:", data);
+			alert("Activity updated successfully ✅");
 
 			// ✅ Reset form
-			setModuleName('');
-			setOverview('');
+			setActivityName('');
+			setPoints('');
+			setDescription('');
+			setInstructions('');
 			setAttachment([]);
+			setDueDate(null);
 
 			router.back();
 
 		} catch (err: any) {
-			console.error("Update module failed:", err);
-			alert(err.message || "Failed to update module");
+			console.error("Update activity failed:", err);
+			alert(err.message || "Failed to update activity");
 		} finally {
 			setLoading(false);
 		}
 	};
 
-	const handleFetchModule = async () => {
+	const handleFetchActivity = async () => {
 		try {
 			setLoading(true);
 
@@ -130,13 +138,16 @@ export default function TicketDetails() {
 			}
 
 			const { data, error } = await supabase
-				.from("class_module")
+				.from("class_activity")
 				.select(`
 					id,
 					class_id,
 					instructor_id,
-					module_name,
-					module_overview,
+					activity_name,
+					description,
+					instructions,
+					points,
+					due_date,
 					file_attachments,
 					created_at,
 					users (
@@ -147,28 +158,33 @@ export default function TicketDetails() {
 						subject
 					)
 				`)
-				.eq("id", moduleid)      // ✅ filter by instructor
+				.eq("id", activityid)      // ✅ filter by instructor
 
 			if (error) throw error;
 
-			console.log("Fetched module:", data);
-			setModuleName(data[0].module_name)
-			setOverview(data[0].module_overview);
+			console.log("Fetched activity:", data);
+
+			
+			setActivityName(data[0].activity_name)
+			setPoints(String(data[0].points));
+			setDescription(data[0].description)
+			setInstructions(data[0].instructions)
 			setAttachment(data[0].file_attachments)
+			setDueDate(new Date(data[0].due_date))
 
 		} catch (err: any) {
-			console.error("Fetch module failed:", err);
-			alert(err.message || "Failed to fetch module");
+			console.error("Fetch activity failed:", err);
+			alert(err.message || "Failed to fetch activity");
 		} finally {
 			setLoading(false);
 		}
 	};
 
 	useEffect(() => {
-		if (moduleid) {
-			handleFetchModule();
+		if (activityid) {
+			handleFetchActivity();
 		}
-	}, [moduleid]);
+	}, [activityid]);
 
   return (
     <>
@@ -178,7 +194,7 @@ export default function TicketDetails() {
           headerTitle: () => (
             <>
               <View className='py-2'>
-								<Text className='text-xl font-bold'>Edit Module</Text>
+								<Text className='text-xl font-bold'>Edit Activity</Text>
 							</View>
             </>
           )
@@ -187,40 +203,106 @@ export default function TicketDetails() {
 			<ScrollView className='mb-12'>
       <View className='p-2 gap-3'>
 				<View className='flex flex-col items-start px-4'>
-					<Text className="mb-2">Module Name</Text>
+					<Text className="mb-2">Activity Name</Text>
 						<TextInput 
 							className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
-							placeholder="e.g., Introduction to Mathematics"
+							placeholder="e.g., Activity Quiz"
 							placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-							value={moduleName}
-							onChangeText={setModuleName}
+							value={activityName}
+							onChangeText={setActivityName}
 						/>
 				</View>
-				<View className='p-4 border border-border rounded-lg gap-3'>
+        <View className='p-4 rounded-lg gap-4'>
 					<View className='flex flex-row items-center gap-2'>
-						<BookOpen 
+						<Clock 
 							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
 							size={18}
 						/>
-						<Text className='font-bold text-foreground'>Module Overview</Text>
+						<Text>Due Date</Text>
+					</View>
+					<Pressable onPress={()=>setOpenDatePicker(true)}>
+						<View className='px-4 flex flex-row justify-between'>
+							<View className='flex flex-row gap-2'>
+								<Icon as={Calendar} className='size-5'/>
+								<Text className={`text-sm font-light ${dueDate ? "text-foreground" : "text-foreground/50"}`}>{dueDate ? dueDate.toDateString() : "+ Add Date"}</Text>
+							</View>
+							<Icon as={ChevronDown} className='size-4 text-foreground'/>
+						</View>
+					</Pressable>
+					{openDatePicker && (
+						<DateTimePicker
+							value={dueDate ?? new Date()}
+							mode="date"
+							display="calendar"
+							onChange={(event, selectedDate) => {
+								setOpenDatePicker(false);
+								if (selectedDate && event.type === 'set') {setDueDate(selectedDate);console.log(selectedDate)};
+							}}
+						/>
+					)}
+					
+				</View>
+				<View className='p-4 rounded-lg gap-4'>
+					<View className='flex flex-row items-center gap-2'>
+						<Pencil 
+							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
+							size={18}
+						/>
+						<Text>Points</Text>
 					</View>
 					<TextInput 
-						multiline
-						textAlignVertical="top"
+						keyboardType='numeric'
 						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
-						placeholder="e.g., This module will tell you about..."
+						placeholder="e.g., 50"
 						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
-						value={overview}
-						onChangeText={setOverview}
+						value={points}
+						onChangeText={setPoints}
 					/>
+					
 				</View>
-				<View className='p-4 border border-border rounded-lg gap-2'>
+				<View className='p-4 border border-border rounded-lg gap-3'>
 					<View className='flex flex-row items-center gap-2'>
 						<FileText 
 							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
 							size={18}
 						/>
-						<Text className='font-bold text-foreground'>Learning Materials</Text>
+						<Text className='font-bold text-foreground'>Description</Text>
+					</View>
+					<TextInput 
+						multiline
+						textAlignVertical="top"
+						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
+						placeholder="e.g., Activity Quiz"
+						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+						value={description}
+						onChangeText={setDescription}
+					/>
+				</View>
+				<View className='p-4 border border-border rounded-lg gap-3'>
+					<View className='flex flex-row items-center gap-2'>
+						<MessageSquare 
+							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
+							size={18}
+						/>
+						<Text className='font-bold text-foreground'>Instructions</Text>
+					</View>
+					<TextInput 
+						multiline
+						textAlignVertical="top"
+						className="w-full bg-foreground/10 p-3 rounded-lg text-foreground mb-2"
+						placeholder="e.g., Activity Quiz"
+						placeholderTextColor={colorScheme === 'dark' ? '#6b7280' : '#9ca3af'}
+						value={instructions}
+						onChangeText={setInstructions}
+					/>
+				</View>
+				<View className='p-4 border border-border rounded-lg gap-2'>
+					<View className='flex flex-row items-center gap-2'>
+						<Paperclip 
+							color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
+							size={18}
+						/>
+						<Text className='font-bold text-foreground'>Attachments</Text>
 					</View>
 					{attachment.map((file, index) => (
 						<View key={index} className='p-4 flex flex-row justify-between items-center border border-border rounded-lg'>
@@ -249,13 +331,13 @@ export default function TicketDetails() {
 					</Pressable>
 					
 				</View>		
-				<Pressable onPress={handleUpdateModule}>
+				<Pressable onPress={handleUpdateActivity}>
 					<View className='p-3 flex flex-row justify-center items-center gap-2 bg-violet-600 rounded-lg'>
 						<Send 
 							color={THEME.light.background}
 							size={20}
 						/>
-						<Text className='font-bold text-white w-[100px]'>Edit Module</Text>
+						<Text className='font-bold text-white w-[100px]'>Edit Activity</Text>
 					</View>
 				</Pressable>
 			</View>

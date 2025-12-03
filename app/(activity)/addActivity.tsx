@@ -67,8 +67,8 @@ export default function TicketDetails() {
 
 	const handleAddActivity = async () => {
 		try {
-			if (!activityName || !dueDate || !points) {
-				alert("Activity name, due date, and points are required");
+			if (!activityName || !dueDate || !points || !attachment) {
+				alert("Activity name, due date, points, and file attachment are required");
 				return;
 			}
 

@@ -247,6 +247,38 @@ export default function ClassDetails() {
 		}
 	};
 
+	const handleDeleteActivity = async (activityid: string) => {
+		setActivities([]);
+		setLoading(true);
+		try {
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) throw new Error("Not authenticated");
+
+			const { error } = await supabase
+				.from("class_activity")
+				.delete()
+				.eq("id", activityid)
+				.eq("instructor_id", user.id); // ✅ Security check
+
+			if (error) throw error;
+
+			setLoading(false);
+			setToggleTaskDropdown(null)
+
+			alert("Activity deleted ✅");
+
+			await handleFetchActivities();
+
+		} catch (err: any) {
+			console.error("Delete activity failed:", err);
+			alert(err.message || "Failed to delete activity");
+		}
+	};
+
 	useEffect(() => {
 		setActivities([]);
 		setModules([]);
@@ -428,6 +460,29 @@ export default function ClassDetails() {
 														</Text>
 													</View>
 												)}
+												{role === 'instructor' && (
+													<>
+														<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
+															<Icon as={Ellipsis} className='size-5'/>
+														</Pressable>
+														{toggleTaskDropdown === index && (
+															<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+																<Pressable onPress={()=>{
+																	router.push({
+																	pathname: '/(activity)/editActivity',
+																	params: { activityid: act.id, classid: classid }
+																})
+																	setToggleTaskDropdown(null);
+																}}>
+																	<Text className='p-2'>Edit</Text>
+																</Pressable>
+																<Pressable onPress={()=>handleDeleteActivity(act.id)} className='border-t border-border'>
+																	<Text className='p-2'>Delete</Text>
+																</Pressable>
+															</View>
+														)}
+													</>
+												)}
 											</View>
 										</View>
 									</Pressable>
@@ -478,11 +533,13 @@ export default function ClassDetails() {
 												</Pressable>
 												{toggleTaskDropdown === index && (
 													<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
-														<Pressable onPress={()=>
+														<Pressable onPress={()=>{
 															router.push({
 															pathname: '/(module)/editModule',
 															params: { moduleid: module.id, classid: classid }
-														})}>
+														})
+															setToggleTaskDropdown(null);
+														}}>
 															<Text className='p-2'>Edit</Text>
 														</Pressable>
 														<Pressable onPress={()=>handleDeleteModule(module.id)} className='border-t border-border'>
@@ -566,11 +623,13 @@ export default function ClassDetails() {
 														</Pressable>
 														{toggleTaskDropdown === index && (
 															<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
-																<Pressable onPress={()=>
+																<Pressable onPress={()=>{
 																	router.push({
 																	pathname: '/(announcement)/editAnnouncement',
 																	params: { announcementid: announcement.id, classid: classid }
-																})}>
+																})
+																	setToggleTaskDropdown(null);
+																}}>
 																	<Text className='p-2'>Edit</Text>
 																</Pressable>
 																<Pressable onPress={()=>handleDeleteAnnouncement(announcement.id)} className='border-t border-border'>
