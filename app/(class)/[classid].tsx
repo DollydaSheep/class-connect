@@ -5,7 +5,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { THEME } from '@/lib/theme';
 import { collection, query, where, getDocs, getDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { Bell, ChevronRight, FileText, Plus, Zap } from 'lucide-react-native';
+import { Bell, ChevronRight, Ellipsis, FileText, Plus, Zap } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { useColorScheme } from 'nativewind';
 import { supabase } from '@/lib/supabase';
@@ -472,10 +472,14 @@ export default function ClassDetails() {
 														<Text className='text-xs font-light'>Prof. {announcement.users.first_name} {announcement.users.last_name}</Text>
 														<Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>{timeAgo(announcement.created_at)}</Text>
 													</View>
-													<View className="self-end ml-4">
-														<ChevronRight 
-															color={colorScheme === 'dark' ? THEME.dark.foreground : THEME.light.foreground}
-														/>
+													<View className="self-stretch justify-between ml-4">
+														<Pressable className='active:opacity-75' onPress={()=>{router.push({
+															pathname: '/(announcement)/editAnnouncement',
+															params: { announcementid: announcement.id, classid: classid }
+														})}}>
+															<Icon as={Ellipsis} className='size-6'/>
+														</Pressable>
+														<Icon as={ChevronRight} className='size-6 text-foreground self-end'/>
 													</View>
 												</View>
 											</View>
