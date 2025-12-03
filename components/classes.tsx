@@ -20,6 +20,8 @@ export default function ClassesComponent() {
   const [visible, setVisible] = useState(false);
   const [classCode, setClassCode] = useState("");
 
+  const [toggleDropdown, setToggleDropdown] = useState<number | null>()
+
   // useEffect(() => {
   //   const unsubscribe = subscribeToClasses(
   //     (updatedClasses) => {
@@ -135,6 +137,42 @@ export default function ClassesComponent() {
     }
   };
 
+  const handleUnenroll = async (classid: string) => {
+    setLoading(true);
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (!user || authError) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("class_students")
+        .delete()
+        .eq("student_id", user.id)
+        .eq("class_id", classid); // ✅ Security check
+
+      if (error) throw error;
+
+      setLoading(false);
+      setToggleDropdown(null)
+      setClasses([]);
+
+      alert("Unenrolled from Class ✅");
+
+      await handleFetchClasses();
+
+    } catch (err: any) {
+      console.error("Unenroll failed:", err);
+      alert(err.message || "Failed to unenroll");
+    }
+  }
+
+  const handleDropdown = (index: number) => {
+		setToggleDropdown(prev => (prev === index ? null : index));
+	};
+
   return(
     <>
       <View className='flex flex-row justify-between items-center w-full mb-2' >
@@ -197,8 +235,8 @@ export default function ClassesComponent() {
                 <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis' style={{zIndex: 1}}>
                   <View className='flex flex-row justify-between'>
                     <View className='flex flex-row items-start gap-4'>
-                      <View className='px-4 py-3 bg-violet-500 rounded-lg'>
-                        <Text className='text-white'>C</Text>
+                      <View className='px-4 py-3 bg-red-300 rounded-lg'>
+                        <Text className='text-white'>{(classItem.subject).charAt(0)}</Text>
                       </View>
                       <View>
                         <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>{classItem.subject}</Text>
@@ -206,61 +244,22 @@ export default function ClassesComponent() {
                         <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: {classItem.class_code}</Text>
                       </View>
                     </View> 
-                      <DropdownMenu
-                        trigger={
-                          <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
-                      }
-                      >
-                        <DropdownMenuItem 
-                          label="Delete"
-                          onPress={() => console.log()}
-                        />
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          label="Edit"
-                        />
-                      </DropdownMenu>
+                    <Pressable className='active:opacity-75' onPress={()=>{handleDropdown(index)}}>
+                      <Icon as={Ellipsis} className="size-5 ml-2"/>
+                    </Pressable>
+                    {toggleDropdown === index && (
+                      <View className='w-24 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+                        <Pressable onPress={()=>handleUnenroll(classItem.id)} className=''>
+                          <Text className='p-3 text-sm'>Unenroll</Text>
+                        </Pressable>
+                      </View>
+                    )}
                       
                   </View>
                 </View>
               </Pressable>
             )
           })}
-
-          <Pressable key={1} onPress={()=>{router.push({
-            pathname: '/(class)/[classid]',
-            params: { classid: "1" }
-          })}}>
-            <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis' style={{zIndex: 1}}>
-              <View className='flex flex-row justify-between'>
-                <View className='flex flex-row items-start gap-4'>
-                  <View className='px-4 py-3 bg-violet-500 rounded-lg'>
-                    <Text className='text-white'>C</Text>
-                  </View>
-                  <View>
-                    <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>CE Comprehensive Course 1</Text>
-                    <Text className='text-xs font-light'>Prof. Justin</Text>
-                    <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
-                  </View>
-                </View> 
-                  <DropdownMenu
-                    trigger={
-                      <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
-                  }
-                  >
-                    <DropdownMenuItem 
-                      label="Delete"
-                      onPress={() => console.log()}
-                    />
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      label="Edit"
-                    />
-                  </DropdownMenu>
-                  
-              </View>
-            </View>
-          </Pressable>
 
           
         </View>
@@ -278,8 +277,8 @@ export default function ClassesComponent() {
                 <View className='flex flex-row self-start bg-background p-4 border border-border rounded-lg w-56 text-ellipsis'>
                   <View className='flex flex-row justify-between'>
                     <View className='flex flex-row items-start gap-4'>
-                      <View className='px-4 py-3 bg-violet-500 rounded-lg'>
-                        <Text className='text-white'>C</Text>
+                      <View className='px-4 py-3 bg-red-300 rounded-lg'>
+                        <Text className='text-white'>{(classItem.subject).charAt(0)}</Text>
                       </View>
                       <View>
                         <Text numberOfLines={1} className='font-medium overflow-hidden w-[105px] text-nowrap truncate'>{classItem.subject}</Text>
@@ -287,21 +286,16 @@ export default function ClassesComponent() {
                         <Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: {classItem.class_code}</Text>
                       </View>
                     </View> 
-                      <DropdownMenu
-                        trigger={
-                          <Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
-                      }
-                      >
-                        <DropdownMenuItem 
-                          label="Delete"
-                          onPress={() => console.log()}
-                        />
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          label="Edit"
-                        />
-                      </DropdownMenu>
-                      
+                    <Pressable className='active:opacity-75' onPress={()=>{handleDropdown(index)}}>
+                      <Icon as={Ellipsis} className="size-5 ml-2"/>
+                    </Pressable>
+                    {toggleDropdown === index && (
+                      <View className='w-24 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+                        <Pressable onPress={()=>handleUnenroll(classItem.id)} className=''>
+                          <Text className='p-3 text-sm'>Unenroll</Text>
+                        </Pressable>
+                      </View>
+                    )}
                   </View>
                 </View>
               </Pressable>
