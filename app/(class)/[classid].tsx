@@ -31,6 +31,8 @@ export default function ClassDetails() {
 	const [modules, setModules] = useState<any[]>([]);
 	const [announcements, setAnnouncements] = useState<any[]>([]);
 
+	const [toggleTaskDropdown, setToggleTaskDropdown] = useState<number | null>();
+
 	const { user } = useAuth();
 
 	const handleFetchAnnouncements = async () => {
@@ -79,6 +81,38 @@ export default function ClassDetails() {
 			alert(err.message || "Failed to fetch announcements");
 		} finally {
 			
+		}
+	};
+
+	const handleDeleteAnnouncement = async (announcementid: string) => {
+		setAnnouncements([]);
+		setLoading(true);
+		try {
+			const {
+				data: { user },
+				error: authError,
+			} = await supabase.auth.getUser();
+
+			if (!user || authError) throw new Error("Not authenticated");
+
+			const { error } = await supabase
+				.from("class_announcement")
+				.delete()
+				.eq("id", announcementid)
+				.eq("instructor_id", user.id); // ✅ Security check
+
+			if (error) throw error;
+
+			setLoading(false);
+			setToggleTaskDropdown(null)
+
+			alert("Task deleted ✅");
+
+			await handleFetchAnnouncements();
+
+		} catch (err: any) {
+			console.error("Delete announcement failed:", err);
+			alert(err.message || "Failed to delete announcement");
 		}
 	};
 
@@ -237,6 +271,10 @@ export default function ClassDetails() {
 		if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
 		if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
 		return `${days} day${days > 1 ? "s" : ""} ago`;
+	};
+
+	const handleTaskDropdown = (index: number) => {
+		setToggleTaskDropdown(prev => (prev === index ? null : index));
 	};
 
   return (
@@ -473,12 +511,23 @@ export default function ClassDetails() {
 														<Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>{timeAgo(announcement.created_at)}</Text>
 													</View>
 													<View className="self-stretch justify-between ml-4">
-														<Pressable className='active:opacity-75' onPress={()=>{router.push({
-															pathname: '/(announcement)/editAnnouncement',
-															params: { announcementid: announcement.id, classid: classid }
-														})}}>
+														<Pressable className='active:opacity-75' onPress={()=>{handleTaskDropdown(index)}}>
 															<Icon as={Ellipsis} className='size-6'/>
 														</Pressable>
+														{toggleTaskDropdown === index && (
+															<View className='w-20 border border-border bg-background rounded-lg absolute -top-6 right-8' style={{zIndex: 20}}>
+																<Pressable onPress={()=>
+																	router.push({
+																	pathname: '/(announcement)/editAnnouncement',
+																	params: { announcementid: announcement.id, classid: classid }
+																})}>
+																	<Text className='p-2'>Edit</Text>
+																</Pressable>
+																<Pressable onPress={()=>handleDeleteAnnouncement(announcement.id)} className='border-t border-border'>
+																	<Text className='p-2'>Delete</Text>
+																</Pressable>
+															</View>
+														)}
 														<Icon as={ChevronRight} className='size-6 text-foreground self-end'/>
 													</View>
 												</View>
