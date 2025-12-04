@@ -14,11 +14,7 @@ export default function AnnouncementTab() {
   return(
     <>
       <View className="p-2 gap-3">
-        <Pressable onPress={()=>{router.push({
-          pathname: '/(announcement)/[announcementid]',
-          params: { announcementid: '1' }
-        })}}
-        >
+        
           <View className='bg-background border border-border p-4 rounded-lg'>
             <View className='flex flex-row justify-between'>
               <View className='flex flex-row items-start gap-4'>
@@ -41,7 +37,7 @@ export default function AnnouncementTab() {
               </View>
             </View>
           </View>
-        </Pressable>
+        
 
         <View className='bg-background border border-border p-4 rounded-lg'>
           <View className='flex flex-row justify-between'>
