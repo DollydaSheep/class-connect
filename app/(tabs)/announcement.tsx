@@ -1,6 +1,7 @@
 import Skeletonbox from "@/components/skeleton/skeletonbox";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { useAppRefresh } from "@/hooks/refreshContext";
 import { useAuth } from "@/hooks/useUserRole";
 import { supabase } from "@/lib/supabase";
 import { THEME } from "@/lib/theme";
@@ -8,7 +9,7 @@ import { router } from "expo-router";
 import { Bell, ChevronRight, Ellipsis } from "lucide-react-native";
 import { useColorScheme } from "nativewind";
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 
 
 export default function AnnouncementTab() {
@@ -21,6 +22,7 @@ export default function AnnouncementTab() {
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [toggleDropdown, setToggleDropdown] = useState<string | null>();
+  const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
   useEffect(() => {
     if (!user) {
@@ -124,6 +126,7 @@ export default function AnnouncementTab() {
       console.error("Fetch announcements error:", err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false)
     }
   };
 
@@ -161,7 +164,7 @@ export default function AnnouncementTab() {
 
   useEffect(() => {
     if (user?.id) fetchAnnouncements();
-  }, [user]);
+  }, [user, role, refreshFlag]);
 
   const timeAgo = (date: string) => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
@@ -190,10 +193,11 @@ export default function AnnouncementTab() {
 
   return(
     <>
+      <ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={async ()=>{setIsRefreshing(true);triggerRefresh();}} />}>
       <View className="p-2 gap-3">
       
         {loading ? (
-          <View className="gap-2">
+          <View className="gap-3">
             <Skeletonbox height={120} />       
             <Skeletonbox height={120} />          
           </View>
@@ -205,7 +209,7 @@ export default function AnnouncementTab() {
           announcements.map(item => (
             <Pressable
               key={item.id}
-              className="bg-background border border-border p-4 rounded-lg mb-3"
+              className="bg-background border border-border p-4 rounded-lg"
               onPress={() =>
                 router.push({
                   pathname: "/(announcement)/[announcementid]",
@@ -275,6 +279,7 @@ export default function AnnouncementTab() {
         )}
         
       </View>
+      </ScrollView>
     </>
   )
 }

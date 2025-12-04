@@ -1,6 +1,6 @@
 "use client"
 
-import { Animated, Modal, Pressable, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import { Animated, Modal, Pressable, RefreshControl, ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import { useColorScheme } from 'nativewind';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
@@ -9,10 +9,16 @@ import { useEffect, useRef, useState } from "react";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropdown-menu";
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import { useAppRefresh } from "@/hooks/refreshContext";
+import { useAuth } from "@/hooks/useUserRole";
+import Skeletonbox from "./skeleton/skeletonbox";
 
 
 export default function InstructorClassesComponent() {
   const { colorScheme } = useColorScheme();
+
+	const { user } = useAuth();
+	const [role, setRole] = useState<string | null>(null);
 
 	const [subject, setSubject] = useState('');
 	const [section, setSection] = useState('');
@@ -22,6 +28,8 @@ export default function InstructorClassesComponent() {
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
   const [classCode, setClassCode] = useState("");
+
+	const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
   // useEffect(() => {
   //   const unsubscribe = subscribeToClasses(
@@ -37,6 +45,32 @@ export default function InstructorClassesComponent() {
   //   );
   //   return () => unsubscribe();
   // }, []);
+
+	useEffect(() => {
+    if (!user) {
+      setRole(null);
+      return;
+    }
+
+    const fetchRole = async () => {
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Fetch role error:", error.message);
+        setRole(null);
+      } else {
+        console.log(data.role)
+        setRole(data.role);
+      }
+    };
+
+    fetchRole();
+  }, [user]);
 
   const handleFetchClasses = async () => {
 		try {
@@ -79,12 +113,13 @@ export default function InstructorClassesComponent() {
 			alert(err.message || "Failed to fetch classes");
 		} finally {
 			setLoading(false);
+			setIsRefreshing(false)
 		}
 	};
 
 	useEffect(() => {
 		handleFetchClasses();
-	}, []);
+	}, [user, role, refreshFlag]);
 
 	const generateClassCode = () => {
 		return Math.random()
@@ -173,9 +208,14 @@ export default function InstructorClassesComponent() {
 					</Pressable>
 				</View>
 
-				<View className="gap-3">
+				<ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={async ()=>{setIsRefreshing(true);triggerRefresh();}} />}>
+				<View className="flex-1 gap-3">
 					{loading ? (
-						<></>
+						<View className="gap-3">
+							<Skeletonbox height={100} />
+							<Skeletonbox height={100} />
+							<Skeletonbox height={100} />
+						</View>
 					) : classes.map((classItem, index) => (
 						<Pressable key={index} onPress={()=>{router.push({
 							pathname: '/(class)/[classid]',
@@ -213,41 +253,8 @@ export default function InstructorClassesComponent() {
 						</Pressable>
 					))} 
 
-					<Pressable key={1} onPress={()=>{router.push({
-						pathname: '/(class)/[classid]',
-						params: { classid: "1" }
-					})}}>
-						<View className='bg-background p-4 border border-border rounded-lg'>
-							<View className='flex flex-row justify-between'>
-								<View className='flex flex-row items-start gap-4'>
-									<View className='px-4 py-3 bg-violet-500 rounded-lg'>
-										<Text className='text-white'>C</Text>
-									</View>
-									<View>
-										<Text numberOfLines={1} className='font-medium w-[205px] text-nowrap truncate'>CE Comprehensive Course 1</Text>
-										<Text className='text-xs font-light'>BSCE 4 Day</Text>
-										<Text className='text-xs font-light mt-2 dark:text-gray-400 text-gray-600'>Code: 303</Text>
-									</View>
-								</View> 
-									<DropdownMenu
-										trigger={
-											<Ellipsis size={24} color={colorScheme === 'dark' ? '#fff' : '#000'} />
-									}
-									>
-										<DropdownMenuItem 
-											label="Delete"
-											onPress={() => console.log()}
-										/>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem 
-											label="Edit"
-										/>
-									</DropdownMenu>
-									
-							</View>
-						</View>
-					</Pressable>
 				</View>
+				</ScrollView>
 
 				{/* Modal */}
 				<Modal
@@ -343,6 +350,7 @@ export default function InstructorClassesComponent() {
 					</ScrollView>
 				</Modal> */}
 			</View>
+			
       
     </>
   )

@@ -9,6 +9,7 @@ import { Icon } from './ui/icon';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
+import { useAppRefresh } from '@/hooks/refreshContext';
 
 export default function CalendarComponent(){
 
@@ -37,6 +38,8 @@ export default function CalendarComponent(){
 	const [markedDates, setMarkedDates] = useState({});
 	const [tasks, setTasks] = useState<any[]>([]);
 	const [activities, setActivities] = useState<any[]>([]);
+
+	const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
 	const colors = [
 		"#51a2ff", //Blue
@@ -154,6 +157,7 @@ export default function CalendarComponent(){
 			alert(err.message || "Failed to fetch activities");
 		} finally {
 			setLoading(false);
+			setIsRefreshing(false)
 		}
 	};
 
@@ -227,7 +231,7 @@ export default function CalendarComponent(){
 	// ✅ Fetch activities on component mount
 	useEffect(() => {
 		handleFetchActivities();
-	}, []);
+	}, [refreshFlag]);
 
 	useEffect(() => {
 		// ✅ Forces correct layout calculation on Android
@@ -274,13 +278,14 @@ export default function CalendarComponent(){
 		} catch (err) {
 			console.error("Fetch tasks failed:", err);
 		} finally {
-
+			setLoading(false)
+			setIsRefreshing(false)
 		}
 	};
 
 	useEffect(() => {
 		handleFetchTasks();
-	}, []);
+	}, [refreshFlag]);
 
 	const handleAddTask = async () => {
 		setLoading(true)
@@ -644,15 +649,6 @@ export default function CalendarComponent(){
 							</Pressable>
 						</View>
 					</View>
-				</View>
-			</Modal>
-			<Modal
-				transparent
-				animationType='fade'
-				visible={loading}
-			>
-				<View className='flex-1 bg-black/50 flex flex-row justify-center items-center'>
-					<ActivityIndicator size={50} />
 				</View>
 			</Modal>
 		</>

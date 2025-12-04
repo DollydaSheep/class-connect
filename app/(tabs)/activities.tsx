@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { ChevronDown, ChevronUp, Ellipsis, FileText } from "lucide-react-native";
@@ -9,6 +9,7 @@ import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useUserRole";
 import Skeletonbox from "@/components/skeleton/skeletonbox";
+import { useAppRefresh } from "@/hooks/refreshContext";
 
 
 
@@ -19,6 +20,7 @@ export default function ActivitiesTab() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState<string | null>(null);
 
+  const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
   const [toggleDropdown, setToggleDropdown] = useState<string | null>();
 
   useEffect(() => {
@@ -129,6 +131,7 @@ export default function ActivitiesTab() {
       console.error("Fetch activities error:", err);
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
   };
 
@@ -168,7 +171,7 @@ export default function ActivitiesTab() {
     if (user?.id) {
       fetchActivities();
     }
-  }, [user,role]);
+  }, [user,role,refreshFlag]);
 
   const groupedActivities = useMemo(() => {
     const groups: Record<string, any[]> = {};
@@ -200,7 +203,7 @@ export default function ActivitiesTab() {
 
   return(
     <>
-      <ScrollView>
+      <ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={async ()=>{setIsRefreshing(true);triggerRefresh();}} />}>
       <View className="p-2">
 
         {loading ? (

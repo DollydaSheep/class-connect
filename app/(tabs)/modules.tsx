@@ -1,17 +1,20 @@
 import Skeletonbox from "@/components/skeleton/skeletonbox";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { useAppRefresh } from "@/hooks/refreshContext";
 import { useAuth } from "@/hooks/useUserRole";
 import { supabase } from "@/lib/supabase";
 import { router } from "expo-router";
 import { Ellipsis, FileText } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 
 
 export default function ModulesTab() {
 
   const { user } = useAuth();
+
+  const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
   const [loading, setLoading] = useState(false);
   const [modules, setModules] = useState<any[]>();
@@ -125,12 +128,13 @@ export default function ModulesTab() {
       console.error("Fetch modules error:", err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false)
     }
   };
 
   useEffect(() => {
     if (user?.id) fetchModules();
-  }, [user,role]);
+  }, [user,role, refreshFlag]);
 
   const handleDeleteModule = async (moduleid: string) => {
     setModules([]);
@@ -186,6 +190,7 @@ export default function ModulesTab() {
   
   return(
     <>
+      <ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={async ()=>{setIsRefreshing(true);triggerRefresh();}} />}>
       <View className="p-2 gap-3">
 
         {loading ? (
@@ -221,7 +226,7 @@ export default function ModulesTab() {
                     })
                   }
                 >
-                  <View className="bg-background border border-border p-4 rounded-lg mb-3">
+                  <View className="bg-background border border-border p-4 rounded-lg">
 
                     <View className="flex flex-row justify-between">
 
@@ -282,6 +287,7 @@ export default function ModulesTab() {
         )}
 
       </View>
+      </ScrollView>
     </>
   )
 }

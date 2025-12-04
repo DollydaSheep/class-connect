@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator} from "./ui/dropd
 import { router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import Skeletonbox from "./skeleton/skeletonbox";
+import { useAppRefresh } from "@/hooks/refreshContext";
 
 
 export default function ClassesComponent() {
@@ -20,6 +21,7 @@ export default function ClassesComponent() {
   const [loading, setLoading] = useState(false);
   const [visible, setVisible] = useState(false);
   const [classCode, setClassCode] = useState("");
+  const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
   const [toggleDropdown, setToggleDropdown] = useState<number | null>()
 
@@ -78,12 +80,13 @@ export default function ClassesComponent() {
       console.error("Fetch error:", err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false)
     }
   };
 
   useEffect(() => {
 		handleFetchClasses();
-	}, []);
+	}, [refreshFlag]);
 
   const handleJoinClass = async () => {
     try {

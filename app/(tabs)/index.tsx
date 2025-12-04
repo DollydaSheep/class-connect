@@ -8,6 +8,7 @@ import SignUpScreen from '@/components/signUpScreen';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
+import { useAppRefresh } from '@/hooks/refreshContext';
 import { useAuth } from '@/hooks/useUserRole';
 import { supabase } from '@/lib/supabase';
 import { THEME } from '@/lib/theme';
@@ -16,7 +17,7 @@ import { Bell, Ellipsis, FileText, MoonStarIcon, Plus, PlusCircle, StarIcon, Sun
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { Image, type ImageStyle, ScrollView, View } from 'react-native';
+import { Image, type ImageStyle, RefreshControl, ScrollView, View } from 'react-native';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -34,6 +35,8 @@ export default function Screen() {
   const [isLogin, setIsLogin] = React.useState(true);
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
   const { user } = useAuth();
 
@@ -85,7 +88,7 @@ export default function Screen() {
     return(
       <>
         <View className='p-2'>
-          <ScrollView>
+          <ScrollView refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={async ()=>{setIsRefreshing(true);triggerRefresh();}} />}>
             <ClassesComponent />
 
             <CalendarComponent />
