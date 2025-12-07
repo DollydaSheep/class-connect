@@ -10,12 +10,16 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { supabase } from '@/lib/supabase';
 import { router } from 'expo-router';
 import { useAppRefresh } from '@/hooks/refreshContext';
+import { useAuth } from '@/hooks/useUserRole';
 
 export default function CalendarComponent(){
 
 	const today = new Date().toISOString().split("T")[0];
 	const day = new Date().toISOString().split("T")[0];
 	const [ready, setReady] = useState(false);
+
+	const { user } = useAuth();
+	const [role, setRole] = useState<string | null>(null);
 
 	const { colorScheme } = useColorScheme();
 	
@@ -41,6 +45,37 @@ export default function CalendarComponent(){
 
 	const { setIsRefreshing, isRefreshing ,refreshFlag ,triggerRefresh } = useAppRefresh();
 
+	useEffect(() => {
+		if (!user) {
+			setRole(null);
+			setLoading(false);
+			return;
+		}
+
+		const fetchRole = async () => {
+			setLoading(true);
+
+			const { data, error } = await supabase
+				.from("users")
+				.select("role")
+				.eq("id", user.id)
+				.single();
+
+			if (error) {
+				console.error("Fetch role error:", error.message);
+				setRole(null);
+			} else {
+				console.log(data.role)
+				setRole(data.role);
+			}
+
+			setLoading(false);
+		};
+
+		fetchRole();
+	}, [user]);
+
+
 	const colors = [
 		"#51a2ff", //Blue
 		"#fcc800", //Yellow
@@ -59,15 +94,13 @@ export default function CalendarComponent(){
 		"2025-12-05": [{title: "Chapter 6 Quiz", subject: "Calculus 1" }],
 	};
 
-	const tasksForSelectedDate = tasks.filter(task => {
-		const taskDate = task.task_date.split("T")[0]; // YYYY-MM-DD
-		return taskDate === selectedDate;
-	});
+	const tasksForSelectedDate = Array.isArray(tasks)
+		? tasks.filter(t => t.task_date && t.task_date.split("T")[0] === selectedDate)
+		: [];
 
-	const activitiesForSelectedDate = activities.filter(activity => {
-		const activityDate = activity.due_date.split("T")[0]; // YYYY-MM-DD
-		return activityDate === selectedDate;
-	});
+	const activitiesForSelectedDate = Array.isArray(activities)
+		? activities.filter(a => a.due_date && a.due_date.split("T")[0] === selectedDate)
+		: [];
 
 	const lightTheme = {
     backgroundColor: THEME.light.background,
@@ -112,45 +145,69 @@ export default function CalendarComponent(){
 				throw new Error("Not authenticated");
 			}
 
-			// Step 1: Get all classes the student is enrolled in
-			const { data: enrollments, error: enrollError } = await supabase
-				.from("class_students")
-				.select("class_id")
-				.eq("student_id", user.id);
+			if(role === 'student') {
+				// Step 1: Get all classes the student is enrolled in
+				const { data: enrollments, error: enrollError } = await supabase
+					.from("class_students")
+					.select("class_id")
+					.eq("student_id", user.id);
 
-			if (enrollError) throw enrollError;
+				if (enrollError) throw enrollError;
 
-			if (!enrollments || enrollments.length === 0) {
-				setActivities([]);
-				setLoading(false);
-				return;
+				if (!enrollments || enrollments.length === 0) {
+					setActivities([]);
+					setLoading(false);
+					return;
+				}
+
+				// Step 2: Get class IDs
+				const classIds = enrollments.map(e => e.class_id);
+
+				// Step 3: Fetch all activities from those classes
+				const { data: activitiesData, error: activitiesError } = await supabase
+					.from("class_activity")
+					.select(`
+						id,
+						class_id,
+						activity_name,
+						description,
+						points,
+						due_date,
+						status,
+						class (
+							subject
+						)
+					`)
+					.in("class_id", classIds)
+					.order("due_date", { ascending: true });
+
+				if (activitiesError) throw activitiesError;
+
+				console.log("Fetched activities:", activitiesData);
+				setActivities(activitiesData || []);
+			} else if(role === 'instructor') {
+				const { data: activitiesData, error: activitiesError } = await supabase
+					.from("class_activity")
+					.select(`
+						id,
+						class_id,
+						activity_name,
+						description,
+						points,
+						due_date,
+						status,
+						class (
+							subject
+						)
+					`)
+					.eq("instructor_id", user.id)
+					.order("due_date", { ascending: true });
+
+				if (activitiesError) throw activitiesError;
+
+				console.log("Fetched activities:", activitiesData);
+				setActivities(activitiesData || []);
 			}
-
-			// Step 2: Get class IDs
-			const classIds = enrollments.map(e => e.class_id);
-
-			// Step 3: Fetch all activities from those classes
-			const { data: activitiesData, error: activitiesError } = await supabase
-				.from("class_activity")
-				.select(`
-					id,
-					class_id,
-					activity_name,
-					description,
-					points,
-					due_date,
-					status,
-					class (
-						subject
-					)
-				`)
-				.in("class_id", classIds)
-				.order("due_date", { ascending: true });
-
-			if (activitiesError) throw activitiesError;
-
-			console.log("Fetched activities:", activitiesData);
-			setActivities(activitiesData || []);
 
 		} catch (err: any) {
 			console.error("Fetch activities failed:", err);
@@ -231,7 +288,7 @@ export default function CalendarComponent(){
 	// ✅ Fetch activities on component mount
 	useEffect(() => {
 		handleFetchActivities();
-	}, [refreshFlag]);
+	}, [refreshFlag, role]);
 
 	useEffect(() => {
 		// ✅ Forces correct layout calculation on Android
@@ -258,23 +315,43 @@ export default function CalendarComponent(){
 				throw new Error("Not authenticated");
 			}
 
-			const { data, error } = await supabase
-				.from("student_personalised_task")
-				.select(`
-					id,
-					task_title,
-					description,
-					task_color,
-					task_date,
-					created_at
-				`)
-				.eq("student_id", user.id)   // ✅ ONLY this user's tasks
-				.order("task_date", { ascending: true });
+			if(role === 'student') {
+				const { data, error } = await supabase
+					.from("student_personalised_task")
+					.select(`
+						id,
+						task_title,
+						description,
+						task_color,
+						task_date,
+						created_at
+					`)
+					.eq("student_id", user.id)   // ✅ ONLY this user's tasks
+					.order("task_date", { ascending: true });
 
-			if (error) throw error;
+				if (error) throw error;
 
-			console.log("Fetched tasks:", data);
-			setTasks(data || []);
+				console.log("Fetched tasks:", data);
+				setTasks(data || []);
+			} else if(role === 'instructor') {
+				const { data, error } = await supabase
+					.from("instructor_personalised_task")
+					.select(`
+						id,
+						task_title,
+						description,
+						task_color,
+						task_date,
+						created_at
+					`)
+					.eq("instructor_id", user.id)   // ✅ ONLY this user's tasks
+					.order("task_date", { ascending: true });
+
+				if (error) throw error;
+
+				console.log("Fetched tasks:", data);
+				setTasks(data || []);
+			}
 		} catch (err) {
 			console.error("Fetch tasks failed:", err);
 		} finally {
@@ -285,7 +362,7 @@ export default function CalendarComponent(){
 
 	useEffect(() => {
 		handleFetchTasks();
-	}, [refreshFlag]);
+	}, [refreshFlag, role]);
 
 	const handleAddTask = async () => {
 		setLoading(true)
@@ -304,22 +381,40 @@ export default function CalendarComponent(){
 				throw new Error("Not authenticated");
 			}
 
-			const { data, error } = await supabase
-				.from("student_personalised_task")
-				.insert({
-					student_id: user.id,          // ✅ MUST be user.id
-					task_title: taskTitle.trim(),
-					description: taskDescription.trim(),
-					task_color: colors[pickedColor],        // e.g. "#8b5cf6"
-					task_date: selectedDateTimeStamp,
-				})
-				.select()
-				.single();
+			if(role === 'student') {
+				const { data, error } = await supabase
+					.from("student_personalised_task")
+					.insert({
+						student_id: user.id,          // ✅ MUST be user.id
+						task_title: taskTitle.trim(),
+						description: taskDescription.trim(),
+						task_color: colors[pickedColor],        // e.g. "#8b5cf6"
+						task_date: selectedDateTimeStamp,
+					})
+					.select()
+					.single();
 
-			if (error) throw error;
+				if (error) throw error;
 
-			console.log("Task added:", data);
+				console.log("Task added:", data);
+			} else if(role === 'instructor') {
+				const { data, error } = await supabase
+					.from("instructor_personalised_task")
+					.insert({
+						instructor_id: user.id,          // ✅ MUST be user.id
+						task_title: taskTitle.trim(),
+						description: taskDescription.trim(),
+						task_color: colors[pickedColor],        // e.g. "#8b5cf6"
+						task_date: selectedDateTimeStamp,
+					})
+					.select()
+					.single();
 
+				if (error) throw error;
+
+				console.log("Task added:", data);
+			}
+ 
 			setLoading(false)
 
 			alert("Task added successfully ✅");
@@ -349,13 +444,23 @@ export default function CalendarComponent(){
 
 			if (!user || authError) throw new Error("Not authenticated");
 
-			const { error } = await supabase
-				.from("student_personalised_task")
-				.delete()
-				.eq("id", taskId)
-				.eq("student_id", user.id); // ✅ Security check
+			if(role === 'student') {
+				const { error } = await supabase
+					.from("student_personalised_task")
+					.delete()
+					.eq("id", taskId)
+					.eq("student_id", user.id); // ✅ Security check
 
-			if (error) throw error;
+				if (error) throw error;
+			} else if(role === 'instructor') {
+				const { error } = await supabase
+					.from("instructor_personalised_task")
+					.delete()
+					.eq("id", taskId)
+					.eq("instructor_id", user.id); // ✅ Security check
+
+				if (error) throw error;
+			}
 
 			setLoading(false);
 			setToggleTaskDropdown(null)
@@ -387,22 +492,42 @@ export default function CalendarComponent(){
 				throw new Error("Not authenticated");
 			}
 
-			const { data, error } = await supabase
-				.from("student_personalised_task")
-				.update({
-					task_title: taskTitle.trim(),
-					description: taskDescription.trim(),
-					task_color: colors[pickedColor],
-					task_date: selectedDateTimeStamp,
-				})
-				.eq("id", editTaskId)          // ✅ target the specific task
-				.eq("student_id", user.id) // ✅ security: only edit own task
-				.select()
-				.single();
+			if(role === 'student') {
+				const { data, error } = await supabase
+					.from("student_personalised_task")
+					.update({
+						task_title: taskTitle.trim(),
+						description: taskDescription.trim(),
+						task_color: colors[pickedColor],
+						task_date: selectedDateTimeStamp,
+					})
+					.eq("id", editTaskId)          // ✅ target the specific task
+					.eq("student_id", user.id) // ✅ security: only edit own task
+					.select()
+					.single();
 
-			if (error) throw error;
+				if (error) throw error;
 
-			console.log("Task updated:", data);
+				console.log("Task updated:", data);
+			} else if(role === 'instructor') {
+				const { data, error } = await supabase
+					.from("instructor_personalised_task")
+					.update({
+						task_title: taskTitle.trim(),
+						description: taskDescription.trim(),
+						task_color: colors[pickedColor],
+						task_date: selectedDateTimeStamp,
+					})
+					.eq("id", editTaskId)          // ✅ target the specific task
+					.eq("instructor_id", user.id) // ✅ security: only edit own task
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				console.log("Task updated:", data);
+			}
+
 			setLoading(false);
 			alert("Task updated successfully ✅");
 

@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { useAppRefresh } from "@/hooks/refreshContext";
 import { useAuth } from "@/hooks/useUserRole";
 import Skeletonbox from "./skeleton/skeletonbox";
+import CalendarComponent from "./calendarHome";
 
 
 export default function InstructorClassesComponent() {
@@ -252,6 +253,8 @@ export default function InstructorClassesComponent() {
 							</View>
 						</Pressable>
 					))} 
+
+					<CalendarComponent />
 
 				</View>
 				</ScrollView>
